@@ -7,7 +7,7 @@ import os
 
 from telegram import (
     Update, InlineKeyboardButton, InlineKeyboardMarkup, 
-    LabeledPrice, PreCheckoutQuery, InputFile
+    LabeledPrice, PreCheckoutQuery, InputFile, BotCommand
 )
 from telegram.ext import (
     Application, CommandHandler, MessageHandler, CallbackQueryHandler,
@@ -76,24 +76,26 @@ Use /help for more commands
         help_text = """
 🆘 Bot Commands:
 
-/start - Start the bot
-/help - Show this help message
-/reset - Reset conversation history
-/testapi - Test AI API connection (Admin only)
-/packages - View available packages
-/dashboard - Check your usage stats
-/balance - Check your remaining credits
+🍔 **Use the Menu Button** next to the text input for quick access to all commands!
+
+/start - 🚀 Start the bot
+/help - ℹ️ Show this help message  
+/dashboard - 📊 Check your usage stats
+/packages - 💎 View available packages
+/balance - 💰 Check your remaining credits
+/reset - 🔄 Reset conversation history
+/testapi - 🧪 Test AI API connection (Admin only)
 
 💬 Message Types:
 - Send text for AI conversation
-- Send images for AI analysis
+- Send images for AI analysis  
 - Send videos for AI response
 
-💳 Payment:
+💳 Payment Methods:
 - Telegram Stars ⭐
 - TON Coin 💎
 
-📊 Usage tracking for all message types
+📊 All message types are tracked for usage
         """
         
         await update.message.reply_text(help_text)
@@ -616,6 +618,25 @@ Use /packages to buy more credits!
         # Always approve in this example
         await query.answer(ok=True)
     
+    async def setup_bot_menu(self, application):
+        """Set up the bot's hamburger menu with commands"""
+        try:
+            commands = [
+                BotCommand("start", "🚀 Start the bot and get welcome message"),
+                BotCommand("help", "ℹ️ Show available commands and help"),
+                BotCommand("dashboard", "📊 View your usage dashboard"),
+                BotCommand("packages", "💎 Browse message packages"),
+                BotCommand("balance", "💰 Check your message balance"),
+                BotCommand("reset", "🔄 Reset conversation history"),
+                BotCommand("testapi", "🧪 Test AI connection (admin only)")
+            ]
+            
+            await application.bot.set_my_commands(commands)
+            logger.info(f"✅ Bot menu set up with {len(commands)} commands")
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to set up bot menu: {str(e)}")
+    
     def run(self):
         """Run the bot"""
         try:
@@ -648,6 +669,9 @@ Use /packages to buy more credits!
             
             # Callback query handler
             self.app.add_handler(CallbackQueryHandler(self.handle_callback_query))
+            
+            # Set up bot menu after initialization
+            self.app.post_init = self.setup_bot_menu
             
             logger.info("Bot starting...")
             
