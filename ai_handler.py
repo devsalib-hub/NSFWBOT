@@ -84,23 +84,19 @@ class OpenRouterAPI:
             return "Sorry, I encountered an error while generating a response. Please try again."
     
     async def _venice_direct_request(self, user_message: str, user_context: str = None, conversation_history: list = None) -> str:
-        """Direct HTTP request to Venice AI using requests library (works, unlike http.client)"""
+        """Direct HTTP request to Venice AI using requests library (reads from database)"""
         try:
-            # HARDCODED Venice AI credentials - USE REQUESTS LIBRARY
-            test_api_key = "af9uD9UxvcrqR3kACGqyILz4gHQ7oN839m10wKy5pm"
-            test_model = "llama-3.2-3b"
+            # Read from database settings (no more hardcoding)
+            api_key = self.api_key
+            model = self.model  
+            base_url = self.base_url
             
-            # Build system prompt
-            system_prompt = """You are a helpful AI assistant in a Telegram bot. 
-            Respond naturally and helpfully to user messages. Keep responses concise but informative.
-            You can handle various topics but maintain appropriate boundaries.
-            Use the conversation history to provide contextual and coherent responses."""
+            if not api_key:
+                print("❌ Venice AI API key not configured")
+                return "Sorry, the AI service is not properly configured. Please contact the administrator."
             
-            if user_context:
-                system_prompt += f"\n\nUser context: {user_context}"
-            
-            # Build messages array with conversation history
-            messages = [{"role": "system", "content": system_prompt}]
+            # Build messages array - NO SYSTEM PROMPT, PURE USER MESSAGES ONLY
+            messages = []
             
             # Add conversation history if provided
             if conversation_history:
@@ -116,25 +112,26 @@ class OpenRouterAPI:
             # Add current user message
             messages.append({"role": "user", "content": user_message})
             
-            # Prepare request data using working format
+            # Prepare request data using working format from database settings
             data = {
                 "frequency_penalty": 0,
                 "max_tokens": 4096,
                 "messages": messages,
-                "model": test_model,
+                "model": model,  # From database
                 "stream": False,
                 "temperature": 0.7,
                 "top_p": 0.95
             }
             
             headers = {
-                'Authorization': f'Bearer {test_api_key}',
+                'Authorization': f'Bearer {api_key}',  # From database
                 'Content-Type': 'application/json'
             }
             
-            print(f"🔍 Venice Direct Request (USING REQUESTS):")
-            print(f"   Model: {test_model}")
-            print(f"   API Key: {test_api_key[:8]}...{test_api_key[-4:]}")
+            print(f"🔍 Venice Direct Request (FROM DATABASE):")
+            print(f"   Base URL: {base_url}")
+            print(f"   Model: {model}")
+            print(f"   API Key: {api_key[:8]}...{api_key[-4:] if len(api_key) > 4 else '***'}")
             
             # Use requests library (works unlike http.client)
             response = requests.post(
@@ -158,18 +155,10 @@ class OpenRouterAPI:
             return "Sorry, I encountered an error while generating a response. Please try again."
     
     async def _standard_openai_request(self, user_message: str, user_context: str = None, conversation_history: list = None) -> str:
-        """Standard OpenAI-compatible request for other providers"""
+        """Standard OpenAI-compatible request for other providers - NO SYSTEM PROMPT"""
         try:
-            system_prompt = """You are a helpful AI assistant in a Telegram bot. 
-            Respond naturally and helpfully to user messages. Keep responses concise but informative.
-            You can handle various topics but maintain appropriate boundaries.
-            Use the conversation history to provide contextual and coherent responses."""
-            
-            if user_context:
-                system_prompt += f"\n\nUser context: {user_context}"
-            
-            # Build messages array with conversation history
-            messages = [{"role": "system", "content": system_prompt}]
+            # Build messages array - NO SYSTEM PROMPT, PURE USER MESSAGES ONLY
+            messages = []
             
             # Add conversation history if provided
             if conversation_history:
@@ -228,22 +217,18 @@ class OpenRouterAPI:
             # For image analysis, we'll use a vision-capable model
             vision_model = "openai/gpt-4-vision-preview"
             
-            messages = [
-                {
-                    "role": "system", 
-                    "content": "You are an AI assistant that can analyze images. Describe what you see in the image and respond helpfully to any questions about it. Use conversation history to provide contextual responses."
-                }
-            ]
+            # NO SYSTEM PROMPT - PURE USER MESSAGES ONLY
+            messages = []
             
-            # Add conversation history (text only, as vision models typically don't support image history)
+            # Add conversation history as user/assistant pairs only
             if conversation_history:
-                context_summary = "Recent conversation context: "
                 for entry in conversation_history[-3:]:  # Last 3 exchanges for context
                     user_msg = entry['user_message'] if entry['user_message'] else ""
                     bot_resp = entry['bot_response'] if entry['bot_response'] else ""
-                    if user_msg and bot_resp:
-                        context_summary += f"User: {user_msg[:100]}... Bot: {bot_resp[:100]}... "
-                messages[0]["content"] += f"\n\n{context_summary}"
+                    if user_msg:
+                        messages.append({"role": "user", "content": user_msg[:100]})
+                    if bot_resp:
+                        messages.append({"role": "assistant", "content": bot_resp[:100]})
             
             if image_data:
                 # Convert image to base64 for API
@@ -305,11 +290,8 @@ class OpenRouterAPI:
                 print("❌ OpenRouter API key not configured in database")
                 return "Sorry, the AI service is not properly configured. Please contact the administrator."
             
-            system_prompt = """You are responding to a user who sent a video. 
-            Since you cannot directly analyze video content, acknowledge the video 
-            and respond based on any accompanying text message and conversation history."""
-            
-            messages = [{"role": "system", "content": system_prompt}]
+            # NO SYSTEM PROMPT - PURE USER MESSAGES ONLY
+            messages = []
             
             # Add conversation history for context
             if conversation_history:
@@ -443,18 +425,23 @@ class OpenRouterAPI:
             return False
     
     def _test_venice_api_requests(self) -> bool:
-        """Test Venice AI using requests library (sync version)"""
+        """Test Venice AI using requests library (reads from database)"""
         try:
-            # HARDCODED Venice AI credentials - EXACT MATCH TO WORKING CURL
-            test_api_key = "af9uD9UxvcrqR3kACGqyILz4gHQ7oN839m10wKy5pm"
-            test_model = "llama-3.2-3b"
+            # Read from database settings (no more hardcoding)
+            api_key = self.api_key
+            model = self.model
+            base_url = self.base_url
+            
+            if not api_key:
+                print("❌ Venice AI API key not configured in database")
+                return False
             
             headers = {
-                'Authorization': f'Bearer {test_api_key}',
+                'Authorization': f'Bearer {api_key}',
                 'Content-Type': 'application/json'
             }
             
-            # Test data matching your EXACT working curl
+            # Test data using database settings
             test_data = {
                 "frequency_penalty": 0,
                 "max_tokens": 4096,
@@ -464,16 +451,17 @@ class OpenRouterAPI:
                         "role": "user"
                     }
                 ],
-                "model": test_model,
+                "model": model,  # From database
                 "stream": False,
                 "temperature": 0.7,
                 "top_p": 0.95
             }
             
-            print(f"🧪 Testing Venice AI API (USING REQUESTS LIBRARY):")
+            print(f"🧪 Testing Venice AI API (FROM DATABASE SETTINGS):")
             print(f"   URL: https://api.venice.ai/api/v1/chat/completions")
-            print(f"   Model: {test_model}")
-            print(f"   API Key: {test_api_key[:8]}...{test_api_key[-4:]}")
+            print(f"   Base URL Setting: {base_url}")
+            print(f"   Model: {model}")
+            print(f"   API Key: {api_key[:8]}...{api_key[-4:] if len(api_key) > 4 else '***'}")
             
             # Use requests library like your PowerShell curl
             response = requests.post(
@@ -485,7 +473,7 @@ class OpenRouterAPI:
             
             print(f"📡 Venice API Response Status: {response.status_code}")
             print(f"📡 Venice API Response Headers: {dict(response.headers)}")
-            print(f"📡 Venice API Response Body: {response.text}")
+            print(f"📡 Venice API Response Body: {response.text[:300]}...")  # Truncate for logging
             
             if response.status_code == 200:
                 response_data = response.json()
