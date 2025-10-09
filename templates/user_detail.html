@@ -210,6 +210,48 @@
     </div>
 </div>
 
+<!-- Send Message Modal -->
+<div class="modal fade" id="sendMessageModal" tabindex="-1" aria-labelledby="sendMessageModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="sendMessageModalLabel">
+                    <i class="fas fa-paper-plane"></i> Send Message to User
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="sendMessageForm">
+                    <div class="mb-3">
+                        <label for="messageText" class="form-label">Message</label>
+                        <textarea class="form-control" id="messageText" name="message" rows="4" 
+                                placeholder="Enter your message here..." required></textarea>
+                        <div class="form-text">You can use HTML formatting: &lt;b&gt;bold&lt;/b&gt;, &lt;i&gt;italic&lt;/i&gt;, &lt;code&gt;code&lt;/code&gt;</div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="previewMode">
+                            <label class="form-check-label" for="previewMode">
+                                Preview message before sending
+                            </label>
+                        </div>
+                    </div>
+                </form>
+                <div id="messagePreview" class="alert alert-info d-none">
+                    <strong>Preview:</strong>
+                    <div id="previewContent"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="sendMessageBtn">
+                    <i class="fas fa-paper-plane"></i> Send Message
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Action Modals and Scripts -->
 <script>
 function addCredits() {
@@ -224,8 +266,9 @@ function resetUser() {
 }
 
 function sendMessage() {
-    // This would allow sending a direct message to the user
-    alert('Send Message functionality - to be implemented');
+    // Open the send message modal
+    const modal = new bootstrap.Modal(document.getElementById('sendMessageModal'));
+    modal.show();
 }
 
 function togglePremium() {
@@ -235,5 +278,87 @@ function togglePremium() {
         alert(`Toggle Premium functionality - to be implemented`);
     }
 }
+
+// Handle send message functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const sendMessageBtn = document.getElementById('sendMessageBtn');
+    const messageText = document.getElementById('messageText');
+    const previewMode = document.getElementById('previewMode');
+    const messagePreview = document.getElementById('messagePreview');
+    const previewContent = document.getElementById('previewContent');
+    
+    // Preview functionality
+    previewMode.addEventListener('change', function() {
+        if (this.checked) {
+            updatePreview();
+            messagePreview.classList.remove('d-none');
+        } else {
+            messagePreview.classList.add('d-none');
+        }
+    });
+    
+    messageText.addEventListener('input', function() {
+        if (previewMode.checked) {
+            updatePreview();
+        }
+    });
+    
+    function updatePreview() {
+        const text = messageText.value;
+        // Basic HTML preview (sanitized)
+        previewContent.innerHTML = text
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/&lt;b&gt;(.*?)&lt;\/b&gt;/g, '<b>$1</b>')
+            .replace(/&lt;i&gt;(.*?)&lt;\/i&gt;/g, '<i>$1</i>')
+            .replace(/&lt;code&gt;(.*?)&lt;\/code&gt;/g, '<code>$1</code>')
+            .replace(/\n/g, '<br>');
+    }
+    
+    // Send message functionality
+    sendMessageBtn.addEventListener('click', function() {
+        const message = messageText.value.trim();
+        if (!message) {
+            alert('Please enter a message');
+            return;
+        }
+        
+        // Disable button and show loading
+        sendMessageBtn.disabled = true;
+        sendMessageBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+        
+        // Send the message
+        fetch(`/send_message/{{ user.user_id }}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `message=${encodeURIComponent(message)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Message sent successfully!');
+                messageText.value = '';
+                previewContent.innerHTML = '';
+                messagePreview.classList.add('d-none');
+                previewMode.checked = false;
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('sendMessageModal'));
+                modal.hide();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error sending message: ' + error);
+        })
+        .finally(() => {
+            // Re-enable button
+            sendMessageBtn.disabled = false;
+            sendMessageBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Message';
+        });
+    });
+});
 </script>
 {% endblock %}

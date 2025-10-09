@@ -322,6 +322,46 @@ def user_detail(user_id):
                          transactions=user_transactions, 
                          usage=user_usage)
 
+@app.route('/send_message/<int:user_id>', methods=['POST'])
+@login_required
+def send_message_to_user(user_id):
+    """Send a message to a specific user via Telegram bot"""
+    try:
+        # Get the message content from the form
+        message = request.form.get('message', '').strip()
+        if not message:
+            return jsonify({'success': False, 'error': 'Message cannot be empty'})
+        
+        # Get bot token from database settings
+        bot_token = db.get_setting('bot_token')
+        if not bot_token:
+            return jsonify({'success': False, 'error': 'Bot token not configured'})
+        
+        # Import here to avoid circular imports
+        import requests
+        
+        # Send message via Telegram Bot API
+        url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+        payload = {
+            'chat_id': user_id,
+            'text': message,
+            'parse_mode': 'HTML'
+        }
+        
+        response = requests.post(url, data=payload)
+        result = response.json()
+        
+        if result.get('ok'):
+            # Log the message in database (optional)
+            # You could add this to message_history table
+            return jsonify({'success': True, 'message': 'Message sent successfully'})
+        else:
+            error_msg = result.get('description', 'Unknown error')
+            return jsonify({'success': False, 'error': f'Failed to send message: {error_msg}'})
+            
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'Error sending message: {str(e)}'})
+
 @app.route('/api/openrouter/models')
 @login_required
 def get_openrouter_models():
