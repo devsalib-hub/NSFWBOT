@@ -84,10 +84,11 @@ class OpenRouterAPI:
             return "Sorry, I encountered an error while generating a response. Please try again."
     
     async def _venice_direct_request(self, user_message: str, user_context: str = None, conversation_history: list = None) -> str:
-        """Direct HTTP request to Venice AI"""
+        """Direct HTTP request to Venice AI using requests library (works, unlike http.client)"""
         try:
-            # Extract host from base URL
-            host = self.base_url.replace('https://', '').replace('http://', '').split('/')[0]
+            # HARDCODED Venice AI credentials - USE REQUESTS LIBRARY
+            test_api_key = "af9uD9UxvcrqR3kACGqyILz4gHQ7oN839m10wKy5pm"
+            test_model = "llama-3.2-3b"
             
             # Build system prompt
             system_prompt = """You are a helpful AI assistant in a Telegram bot. 
@@ -115,40 +116,42 @@ class OpenRouterAPI:
             # Add current user message
             messages.append({"role": "user", "content": user_message})
             
-            # Prepare request data
-            payload = json.dumps({
-                "model": self.model,
+            # Prepare request data using working format
+            data = {
+                "frequency_penalty": 0,
+                "max_tokens": 4096,
                 "messages": messages,
-                "max_tokens": 500,
-                "temperature": 0.7
-            })
+                "model": test_model,
+                "stream": False,
+                "temperature": 0.7,
+                "top_p": 0.95
+            }
             
             headers = {
-                'Authorization': f'Bearer {self.api_key}',
+                'Authorization': f'Bearer {test_api_key}',
                 'Content-Type': 'application/json'
             }
             
-            print(f"🔍 Venice Direct Request:")
-            print(f"   Host: {host}")
-            print(f"   Path: /api/v1/chat/completions")
-            print(f"   Headers: {list(headers.keys())}")
-            print(f"   Payload: {payload}")
+            print(f"🔍 Venice Direct Request (USING REQUESTS):")
+            print(f"   Model: {test_model}")
+            print(f"   API Key: {test_api_key[:8]}...{test_api_key[-4:]}")
             
-            # Use http.client for direct connection like Venice example
-            conn = http.client.HTTPSConnection(host)
-            conn.request("POST", "/api/v1/chat/completions", payload, headers)
-            res = conn.getresponse()
-            data = res.read()
+            # Use requests library (works unlike http.client)
+            response = requests.post(
+                "https://api.venice.ai/api/v1/chat/completions",
+                headers=headers,
+                json=data,
+                timeout=30
+            )
             
-            print(f"📡 Venice Response Status: {res.status}")
-            print(f"📡 Venice Response: {data.decode('utf-8')}")
+            print(f"📡 Venice Response Status: {response.status_code}")
             
-            if res.status == 200:
-                response_data = json.loads(data.decode('utf-8'))
+            if response.status_code == 200:
+                response_data = response.json()
                 return response_data["choices"][0]["message"]["content"].strip()
             else:
-                print(f"❌ Venice API error: {res.status} - {data.decode('utf-8')}")
-                return "Sorry, I'm having trouble generating a response right now. Please try again later."
+                print(f"❌ Venice API error: {response.status_code} - {response.text}")
+                return "Sorry, I'm having trouble connecting to the AI service right now. Please try again later."
                 
         except Exception as e:
             print(f"Error in Venice direct request: {str(e)}")
@@ -358,7 +361,10 @@ class OpenRouterAPI:
             
             # Test Venice AI specifically
             if 'venice.ai' in self.base_url:
-                return await self._test_venice_api()
+                print("🔍 Testing Venice AI with requests library (the one that works)...")  
+                result = self._test_venice_api_requests()
+                print(f"📊 Venice AI Test Result: {result}")
+                return result
             else:
                 return await self._test_standard_api()
                 
@@ -367,39 +373,137 @@ class OpenRouterAPI:
             return False
     
     async def _test_venice_api(self) -> bool:
-        """Test Venice AI using direct HTTP like their curl example"""
+        """Test Venice AI using exact format that works in curl"""
         try:
-            # Extract host from base URL
-            host = self.base_url.replace('https://', '').replace('http://', '').split('/')[0]
+            # HARDCODED Venice AI credentials - MATCH WORKING CURL
+            test_api_key = "af9uD9UxvcrqR3kACGqyILz4gHQ7oN839m10wKy5pm"
+            test_model = "llama-3.2-3b"  # Same model as working curl
             
             headers = {
-                'Authorization': f'Bearer {self.api_key}'
+                'Authorization': f'Bearer {test_api_key}',
+                'Content-Type': 'application/json',
+                'User-Agent': 'python-httpx/0.24.1',  # Add User-Agent like curl
+                'Accept': '*/*'  # Add Accept header
             }
             
-            print(f"🧪 Testing Venice AI API:")
-            print(f"   Host: {host}")
-            print(f"   Path: /api/v1/models")
-            print(f"   API Key: {'*' * (len(self.api_key) - 4) + self.api_key[-4:] if len(self.api_key) > 4 else '***'}")
+            # Test data matching your EXACT working curl
+            test_data = {
+                "frequency_penalty": 0,
+                "max_tokens": 4096,
+                "messages": [
+                    {
+                        "content": "Say 'Venice AI test successful!' to confirm the connection works",
+                        "role": "user"
+                    }
+                ],
+                "model": test_model,
+                "stream": False,
+                "temperature": 0.7,
+                "top_p": 0.95
+            }
+            
+            print(f"🧪 Testing Venice AI API (DEBUGGING 403):")
+            print(f"   URL: https://api.venice.ai/api/v1/chat/completions")
+            print(f"   Model: {test_model}")
+            print(f"   API Key: {test_api_key[:8]}...{test_api_key[-4:]}")
+            print(f"   Headers: {headers}")
             
             # Use direct HTTP connection like Venice example
-            conn = http.client.HTTPSConnection(host)
-            conn.request("GET", "/api/v1/models", "", headers)
+            conn = http.client.HTTPSConnection("api.venice.ai")
+            
+            # Convert data to JSON string
+            json_data = json.dumps(test_data)
+            print(f"   JSON Data: {json_data}")
+            
+            conn.request("POST", "/api/v1/chat/completions", json_data, headers)
             res = conn.getresponse()
             data = res.read()
             
-            print(f"📡 Venice Models Response Status: {res.status}")
-            print(f"📡 Venice Models Response: {data.decode('utf-8')}")
+            print(f"📡 Venice API Response Status: {res.status}")
+            print(f"📡 Venice API Response Headers: {dict(res.getheaders())}")
+            print(f"📡 Venice API Response Body: {data.decode('utf-8')}")
             
             if res.status == 200:
-                models_data = json.loads(data.decode('utf-8'))
-                print(f"✅ Venice API Test Success! Found {len(models_data.get('data', []))} models")
-                return True
+                response_data = json.loads(data.decode('utf-8'))
+                if 'choices' in response_data and len(response_data['choices']) > 0:
+                    message = response_data['choices'][0].get('message', {}).get('content', '')
+                    print(f"✅ Venice AI Test Success! Response: {message[:100]}...")
+                    return True
+                else:
+                    print(f"❌ Venice API Test Failed: Invalid response format")
+                    return False
             else:
                 print(f"❌ Venice API Test Failed: {res.status}")
                 return False
                 
         except Exception as e:
             print(f"Venice API test error: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return False
+    
+    def _test_venice_api_requests(self) -> bool:
+        """Test Venice AI using requests library (sync version)"""
+        try:
+            # HARDCODED Venice AI credentials - EXACT MATCH TO WORKING CURL
+            test_api_key = "af9uD9UxvcrqR3kACGqyILz4gHQ7oN839m10wKy5pm"
+            test_model = "llama-3.2-3b"
+            
+            headers = {
+                'Authorization': f'Bearer {test_api_key}',
+                'Content-Type': 'application/json'
+            }
+            
+            # Test data matching your EXACT working curl
+            test_data = {
+                "frequency_penalty": 0,
+                "max_tokens": 4096,
+                "messages": [
+                    {
+                        "content": "Say 'Venice AI test successful!' to confirm the connection works",
+                        "role": "user"
+                    }
+                ],
+                "model": test_model,
+                "stream": False,
+                "temperature": 0.7,
+                "top_p": 0.95
+            }
+            
+            print(f"🧪 Testing Venice AI API (USING REQUESTS LIBRARY):")
+            print(f"   URL: https://api.venice.ai/api/v1/chat/completions")
+            print(f"   Model: {test_model}")
+            print(f"   API Key: {test_api_key[:8]}...{test_api_key[-4:]}")
+            
+            # Use requests library like your PowerShell curl
+            response = requests.post(
+                "https://api.venice.ai/api/v1/chat/completions",
+                headers=headers,
+                json=test_data,
+                timeout=30
+            )
+            
+            print(f"📡 Venice API Response Status: {response.status_code}")
+            print(f"📡 Venice API Response Headers: {dict(response.headers)}")
+            print(f"📡 Venice API Response Body: {response.text}")
+            
+            if response.status_code == 200:
+                response_data = response.json()
+                if 'choices' in response_data and len(response_data['choices']) > 0:
+                    message = response_data['choices'][0].get('message', {}).get('content', '')
+                    print(f"✅ Venice AI Test Success! Response: {message[:100]}...")
+                    return True
+                else:
+                    print(f"❌ Venice API Test Failed: Invalid response format")
+                    return False
+            else:
+                print(f"❌ Venice API Test Failed: {response.status_code}")
+                return False
+                
+        except Exception as e:
+            print(f"Venice API test error (requests): {str(e)}")
+            import traceback
+            traceback.print_exc()
             return False
     
     async def _test_standard_api(self) -> bool:
