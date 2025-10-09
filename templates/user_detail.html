@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+
+{% block title %}User Details - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-user"></i> User Details</h1>
+    <a href="{{ url_for('users') }}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Users
+    </a>
+</div>
+
+<!-- User Information Card -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="glass-card p-4">
+            <h5><i class="fas fa-info-circle"></i> User Information</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>User ID:</strong> {{ user.user_id }}</p>
+                    <p><strong>Username:</strong> @{{ user.username or 'N/A' }}</p>
+                    <p><strong>Name:</strong> {{ user.first_name or '' }} {{ user.last_name or '' }}</p>
+                    <p><strong>Registration:</strong> {{ user.registration_date or 'N/A' }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Last Activity:</strong> {{ user.last_activity or 'N/A' }}</p>
+                    <p><strong>Total Spent:</strong> <span class="badge bg-success">${{ user.total_spent or 0 }}</span></p>
+                    <p><strong>Premium Status:</strong> 
+                        {% if user.is_premium %}
+                            <span class="badge bg-warning">Premium</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Free</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="glass-card p-4">
+            <h5><i class="fas fa-chart-pie"></i> Message Credits</h5>
+            <div class="text-center">
+                <div class="mb-2">
+                    <span class="badge bg-primary fs-6">{{ user.text_messages_left or 0 }}</span>
+                    <small class="text-muted d-block">Text Messages</small>
+                </div>
+                <div class="mb-2">
+                    <span class="badge bg-success fs-6">{{ user.image_messages_left or 0 }}</span>
+                    <small class="text-muted d-block">Image Messages</small>
+                </div>
+                <div class="mb-2">
+                    <span class="badge bg-warning fs-6">{{ user.video_messages_left or 0 }}</span>
+                    <small class="text-muted d-block">Video Messages</small>
+                </div>
+                <hr>
+                <div>
+                    <span class="badge bg-info fs-6">{{ user.free_messages_used or 0 }}</span>
+                    <small class="text-muted d-block">Free Messages Used</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- User Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="glass-card p-4">
+            <h5><i class="fas fa-tools"></i> User Actions</h5>
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-primary" onclick="addCredits()">
+                    <i class="fas fa-plus"></i> Add Credits
+                </button>
+                <button type="button" class="btn btn-warning" onclick="resetUser()">
+                    <i class="fas fa-undo"></i> Reset User
+                </button>
+                <button type="button" class="btn btn-info" onclick="sendMessage()">
+                    <i class="fas fa-paper-plane"></i> Send Message
+                </button>
+                {% if user.is_premium %}
+                <button type="button" class="btn btn-secondary" onclick="togglePremium()">
+                    <i class="fas fa-crown"></i> Remove Premium
+                </button>
+                {% else %}
+                <button type="button" class="btn btn-warning" onclick="togglePremium()">
+                    <i class="fas fa-crown"></i> Make Premium
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Transactions History -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="glass-card p-4">
+            <h5><i class="fas fa-receipt"></i> Transaction History</h5>
+            {% if transactions %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Package</th>
+                            <th>Amount</th>
+                            <th>Method</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in transactions %}
+                        <tr>
+                            <td>{{ transaction.id }}</td>
+                            <td>{{ transaction.package_name or 'N/A' }}</td>
+                            <td>
+                                {% if transaction.payment_method == 'ton' %}
+                                    {{ transaction.amount }} TON
+                                {% elif transaction.payment_method == 'stars' %}
+                                    {{ transaction.amount }} ⭐
+                                {% else %}
+                                    ${{ transaction.amount }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if transaction.payment_method == 'ton' %}
+                                    <span class="badge bg-primary">TON</span>
+                                {% elif transaction.payment_method == 'stars' %}
+                                    <span class="badge bg-warning">Stars</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ transaction.payment_method }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if transaction.status == 'completed' %}
+                                    <span class="badge bg-success">Completed</span>
+                                {% elif transaction.status == 'pending' %}
+                                    <span class="badge bg-warning">Pending</span>
+                                {% elif transaction.status == 'failed' %}
+                                    <span class="badge bg-danger">Failed</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ transaction.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ transaction.created_date or 'N/A' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4 text-muted">
+                <i class="fas fa-info-circle"></i> No transactions found for this user
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Usage History -->
+<div class="row">
+    <div class="col-12">
+        <div class="glass-card p-4">
+            <h5><i class="fas fa-history"></i> Usage History</h5>
+            {% if usage %}
+            <div class="table-responsive">
+                <table class="table table-hover table-sm">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Content</th>
+                            <th>AI Model</th>
+                            <th>Tokens</th>
+                            <th>Cost</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in usage %}
+                        <tr>
+                            <td>
+                                {% if entry.message_type == 'text' %}
+                                    <span class="badge bg-primary">Text</span>
+                                {% elif entry.message_type == 'image' %}
+                                    <span class="badge bg-success">Image</span>
+                                {% elif entry.message_type == 'video' %}
+                                    <span class="badge bg-warning">Video</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small>{{ entry.user_message[:50] }}{% if entry.user_message|length > 50 %}...{% endif %}</small>
+                            </td>
+                            <td><small>{{ entry.ai_model or 'N/A' }}</small></td>
+                            <td><small>{{ entry.tokens_used or 0 }}</small></td>
+                            <td><small>${{ entry.cost or 0 }}</small></td>
+                            <td><small>{{ entry.created_date or 'N/A' }}</small></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4 text-muted">
+                <i class="fas fa-info-circle"></i> No usage history found for this user
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Action Modals and Scripts -->
+<script>
+function addCredits() {
+    // This would open a modal or prompt for adding credits
+    alert('Add Credits functionality - to be implemented');
+}
+
+function resetUser() {
+    if (confirm('Are you sure you want to reset this user? This will clear their message credits.')) {
+        alert('Reset User functionality - to be implemented');
+    }
+}
+
+function sendMessage() {
+    // This would allow sending a direct message to the user
+    alert('Send Message functionality - to be implemented');
+}
+
+function togglePremium() {
+    const isPremium = {% if user.is_premium %}true{% else %}false{% endif %};
+    const action = isPremium ? 'remove' : 'grant';
+    if (confirm(`Are you sure you want to ${action} premium status for this user?`)) {
+        alert(`Toggle Premium functionality - to be implemented`);
+    }
+}
+</script>
+{% endblock %}

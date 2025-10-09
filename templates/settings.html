@@ -123,6 +123,73 @@
         </div>
     </div>
     
+    <!-- Free Messages Configuration -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="glass-card p-4 mb-4">
+                <h5><i class="fas fa-gift"></i> Free Messages Configuration</h5>
+                
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="free_messages" class="form-label">Free Messages Per User</label>
+                            <input type="number" class="form-control" id="free_messages" name="free_messages" 
+                                   value="{{ settings.get('free_messages', '2') }}" min="0" max="10">
+                            <div class="form-text">Number of free messages each new user gets</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="default_text_price" class="form-label">Text Message Price ($)</label>
+                            <input type="number" step="0.01" class="form-control" id="default_text_price" name="default_text_price" 
+                                   value="{{ settings.get('default_text_price', '1') }}" min="0.01" max="10">
+                            <div class="form-text">Price per text message in USD</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="default_image_price" class="form-label">Image Message Price ($)</label>
+                            <input type="number" step="0.01" class="form-control" id="default_image_price" name="default_image_price" 
+                                   value="{{ settings.get('default_image_price', '2') }}" min="0.01" max="20">
+                            <div class="form-text">Price per image message in USD</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="default_video_price" class="form-label">Video Message Price ($)</label>
+                            <input type="number" step="0.01" class="form-control" id="default_video_price" name="default_video_price" 
+                                   value="{{ settings.get('default_video_price', '3') }}" min="0.01" max="30">
+                            <div class="form-text">Price per video message in USD</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="max_requests_per_minute" class="form-label">Max Requests/Minute</label>
+                            <input type="number" class="form-control" id="max_requests_per_minute" name="max_requests_per_minute" 
+                                   value="{{ settings.get('max_requests_per_minute', '20') }}" min="1" max="100">
+                            <div class="form-text">Rate limit per user per minute</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="max_requests_per_hour" class="form-label">Max Requests/Hour</label>
+                            <input type="number" class="form-control" id="max_requests_per_hour" name="max_requests_per_hour" 
+                                   value="{{ settings.get('max_requests_per_hour', '100') }}" min="10" max="1000">
+                            <div class="form-text">Rate limit per user per hour</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <!-- Advanced Settings -->
     <div class="row">
         <div class="col-md-12">
@@ -148,9 +215,12 @@
                     
                     <div class="col-md-4">
                         <div class="mb-3">
-                            <label for="response_timeout" class="form-label">AI Response Timeout (seconds)</label>
-                            <input type="number" class="form-control" id="response_timeout" name="response_timeout" 
-                                   value="{{ settings.get('response_timeout', '30') }}" min="10" max="120">
+                            <label for="ai_response_timeout" class="form-label">AI Response Timeout (seconds)</label>
+                            <input type="number" class="form-control" id="ai_response_timeout" name="ai_response_timeout" 
+                                   value="{{ settings.get('ai_response_timeout', '30') }}" min="10" max="120">
+                            <div class="form-text">Maximum time to wait for AI response</div>
+                        </div>
+                    </div>
                         </div>
                     </div>
                 </div>

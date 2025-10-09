@@ -205,7 +205,7 @@ def payments():
 @login_required
 def settings():
     if request.method == 'POST':
-        # Update settings
+        # Update basic settings
         bot_token = request.form['bot_token']
         openrouter_api_key = request.form['openrouter_api_key']
         openrouter_model = request.form['openrouter_model']
@@ -213,6 +213,19 @@ def settings():
         webhook_url = request.form['webhook_url']
         simulation_mode = 'simulation_mode' in request.form
         bot_active = 'bot_active' in request.form
+        
+        # Free messages and pricing settings
+        free_messages = request.form.get('free_messages', '2')
+        default_text_price = request.form.get('default_text_price', '1')
+        default_image_price = request.form.get('default_image_price', '2')
+        default_video_price = request.form.get('default_video_price', '3')
+        max_requests_per_minute = request.form.get('max_requests_per_minute', '20')
+        max_requests_per_hour = request.form.get('max_requests_per_hour', '100')
+        
+        # Advanced settings
+        max_image_size = request.form.get('max_image_size', '10')
+        max_video_size = request.form.get('max_video_size', '50')
+        ai_response_timeout = request.form.get('ai_response_timeout', '30')
         
         # Update in database
         settings_to_update = {
@@ -222,7 +235,16 @@ def settings():
             'ton_wallet': ton_wallet,
             'webhook_url': webhook_url,
             'simulation_mode': str(simulation_mode).lower(),
-            'bot_active': str(bot_active).lower()
+            'bot_active': str(bot_active).lower(),
+            'free_messages': free_messages,
+            'default_text_price': default_text_price,
+            'default_image_price': default_image_price,
+            'default_video_price': default_video_price,
+            'max_requests_per_minute': max_requests_per_minute,
+            'max_requests_per_hour': max_requests_per_hour,
+            'max_image_size': max_image_size,
+            'max_video_size': max_video_size,
+            'ai_response_timeout': ai_response_timeout
         }
         
         for key, value in settings_to_update.items():
