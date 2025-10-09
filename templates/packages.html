@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Packages - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-box"></i> Packages</h1>
+    <a href="{{ url_for('create_package') }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Create Package
+    </a>
+</div>
+
+<div class="glass-card p-4">
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Text</th>
+                    <th>Images</th>
+                    <th>Videos</th>
+                    <th>TON Price</th>
+                    <th>Stars Price</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for package in packages %}
+                <tr>
+                    <td>{{ package.id }}</td>
+                    <td><strong>{{ package.name }}</strong></td>
+                    <td>{{ package.description[:50] }}{% if package.description|length > 50 %}...{% endif %}</td>
+                    <td><span class="badge bg-primary">{{ package.text_count }}</span></td>
+                    <td><span class="badge bg-success">{{ package.image_count }}</span></td>
+                    <td><span class="badge bg-warning">{{ package.video_count }}</span></td>
+                    <td>{{ package.price_ton }} TON</td>
+                    <td>{{ package.price_stars }} ⭐</td>
+                    <td>
+                        {% if package.is_active %}
+                            <span class="badge bg-success">Active</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="btn-group" role="group">
+                            <a href="{{ url_for('edit_package', package_id=package.id) }}" 
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <button class="btn btn-sm btn-outline-danger" 
+                                    onclick="deletePackage({{ package.id }})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        {% if not packages %}
+        <div class="text-center py-5">
+            <i class="fas fa-box fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No packages created yet</h5>
+            <p class="text-muted">Create your first package to get started!</p>
+            <a href="{{ url_for('create_package') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Create First Package
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function deletePackage(packageId) {
+    if (confirm('Are you sure you want to delete this package? This action cannot be undone.')) {
+        fetch(`/packages/delete/${packageId}`, {
+            method: 'POST'
+        })
+        .then(response => {
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('Error deleting package');
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

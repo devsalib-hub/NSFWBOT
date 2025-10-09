@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Users - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-users"></i> Users</h1>
+    <div class="input-group" style="max-width: 300px;">
+        <input type="text" class="form-control" placeholder="Search users..." id="userSearch">
+        <button class="btn btn-outline-secondary" type="button">
+            <i class="fas fa-search"></i>
+        </button>
+    </div>
+</div>
+
+<div class="glass-card p-4">
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Telegram ID</th>
+                    <th>Username</th>
+                    <th>Name</th>
+                    <th>Joined</th>
+                    <th>Messages Left</th>
+                    <th>Total Spent</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.user_id }}</td>
+                    <td>{{ user.user_id }}</td>
+                    <td>@{{ user.username or 'N/A' }}</td>
+                    <td>{{ user.first_name or '' }} {{ user.last_name or '' }}</td>
+                    <td>{{ user.registration_date if user.registration_date else 'N/A' }}</td>
+                    <td>
+                        <span class="badge bg-primary" title="Text">{{ user.text_messages_left or 0 }}</span>
+                        <span class="badge bg-success" title="Images">{{ user.image_messages_left or 0 }}</span>
+                        <span class="badge bg-warning" title="Videos">{{ user.video_messages_left or 0 }}</span>
+                    </td>
+                    <td>
+                        <span class="badge bg-success">${{ user.total_spent or 0 }}</span>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('user_detail', user_id=user.user_id) }}" 
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-eye"></i> View
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        {% if not users %}
+        <div class="text-center py-5">
+            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No users found</h5>
+            <p class="text-muted">Users will appear here when they start using the bot</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Pagination would go here -->
+<nav aria-label="User pagination" class="mt-4">
+    <ul class="pagination justify-content-center">
+        <li class="page-item disabled">
+            <a class="page-link" href="#" tabindex="-1">Previous</a>
+        </li>
+        <li class="page-item active">
+            <a class="page-link" href="#">1</a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="#">Next</a>
+        </li>
+    </ul>
+</nav>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('userSearch').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const rows = document.querySelectorAll('tbody tr');
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        if (text.includes(searchTerm)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+});
+</script>
+{% endblock %}

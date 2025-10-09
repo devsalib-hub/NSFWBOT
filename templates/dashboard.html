@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-tachometer-alt"></i> Dashboard</h1>
+    <div class="badge bg-success fs-6">
+        {% if settings.get('bot_active') == 'true' %}
+            <i class="fas fa-circle text-success"></i> Bot Online
+        {% else %}
+            <i class="fas fa-circle text-danger"></i> Bot Offline
+        {% endif %}
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="glass-card p-3 text-center">
+            <h2 id="total-users" class="text-primary">{{ total_users }}</h2>
+            <p class="mb-0"><i class="fas fa-users"></i> Total Users</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="glass-card p-3 text-center">
+            <h2 id="total-transactions" class="text-success">{{ total_transactions }}</h2>
+            <p class="mb-0"><i class="fas fa-receipt"></i> Transactions</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="glass-card p-3 text-center">
+            <h2 id="total-revenue" class="text-warning">${{ "%.2f"|format(total_revenue) }}</h2>
+            <p class="mb-0"><i class="fas fa-dollar-sign"></i> Revenue</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="glass-card p-3 text-center">
+            <h2 id="active-packages" class="text-info">{{ settings.get('active_packages', 0) }}</h2>
+            <p class="mb-0"><i class="fas fa-box"></i> Packages</p>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Bot Status -->
+    <div class="col-md-6">
+        <div class="glass-card p-4 mb-4">
+            <h5><i class="fas fa-robot"></i> Bot Status</h5>
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <p class="mb-1">
+                        <strong>Status:</strong> 
+                        <span class="badge bg-success">Active</span>
+                    </p>
+                    <p class="mb-1">
+                        <strong>Model:</strong> {{ settings.get('openrouter_model', 'Not configured') }}
+                    </p>
+                    <p class="mb-0">
+                        <strong>Mode:</strong> 
+                        {% if settings.get('simulation_mode') == 'true' %}
+                            <span class="badge bg-warning">Simulation</span>
+                        {% else %}
+                            <span class="badge bg-success">Production</span>
+                        {% endif %}
+                    </p>
+                </div>
+                <div>
+                    <i class="fas fa-robot fa-3x text-primary"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="col-md-6">
+        <div class="glass-card p-4 mb-4">
+            <h5><i class="fas fa-bolt"></i> Quick Actions</h5>
+            <div class="d-grid gap-2">
+                <a href="{{ url_for('packages') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Create Package
+                </a>
+                <a href="{{ url_for('users') }}" class="btn btn-info">
+                    <i class="fas fa-users"></i> Manage Users
+                </a>
+                <a href="{{ url_for('payments') }}" class="btn btn-success">
+                    <i class="fas fa-money-bill-wave"></i> View Revenue
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Users -->
+<div class="row">
+    <div class="col-12">
+        <div class="glass-card p-4">
+            <h5><i class="fas fa-clock"></i> Recent Users</h5>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>User ID</th>
+                            <th>Username</th>
+                            <th>Joined</th>
+                            <th>Messages Left</th>
+                            <th>Total Spent</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in recent_users %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('user_detail', user_id=user.user_id) }}" class="text-decoration-none">
+                                    {{ user.user_id }}
+                                </a>
+                            </td>
+                            <td>{{ user.username or 'N/A' }}</td>
+                            <td>{{ user.registration_date if user.registration_date else 'N/A' }}</td>
+                            <td>
+                                <span class="badge bg-primary">{{ user.text_messages_left or 0 }} text</span>
+                                <span class="badge bg-success">{{ user.image_messages_left or 0 }} img</span>
+                                <span class="badge bg-warning">{{ user.video_messages_left or 0 }} vid</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-success">${{ user.total_spent or 0 }}</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            {% if not recent_users %}
+            <div class="text-center py-4 text-muted">
+                <i class="fas fa-info-circle"></i> No users found yet
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

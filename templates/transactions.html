@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}Transactions - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-money-bill-wave"></i> Transactions</h1>
+    <div class="btn-group" role="group">
+        <button type="button" class="btn btn-outline-primary active" onclick="filterTransactions('all')">All</button>
+        <button type="button" class="btn btn-outline-success" onclick="filterTransactions('completed')">Completed</button>
+        <button type="button" class="btn btn-outline-warning" onclick="filterTransactions('pending')">Pending</button>
+        <button type="button" class="btn btn-outline-danger" onclick="filterTransactions('failed')">Failed</button>
+    </div>
+</div>
+
+<div class="glass-card p-4">
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>User</th>
+                    <th>Package</th>
+                    <th>Amount</th>
+                    <th>Method</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for transaction in transactions %}
+                <tr data-status="{{ transaction.status }}">
+                    <td>{{ transaction.id }}</td>
+                    <td>
+                        {% if transaction.username %}
+                            @{{ transaction.username }}
+                        {% else %}
+                            ID: {{ transaction.user_id }}
+                        {% endif %}
+                    </td>
+                    <td>{{ transaction.package_name or 'N/A' }}</td>
+                    <td>
+                        {% if transaction.payment_method == 'ton' %}
+                            {{ transaction.amount }} TON
+                        {% elif transaction.payment_method == 'stars' %}
+                            {{ transaction.amount }} ⭐
+                        {% else %}
+                            {{ transaction.amount }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if transaction.payment_method == 'ton' %}
+                            <span class="badge bg-primary">TON</span>
+                        {% elif transaction.payment_method == 'stars' %}
+                            <span class="badge bg-warning">Stars</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ transaction.payment_method or 'Unknown' }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if transaction.status == 'completed' %}
+                            <span class="badge bg-success">Completed</span>
+                        {% elif transaction.status == 'pending' %}
+                            <span class="badge bg-warning">Pending</span>
+                        {% elif transaction.status == 'failed' %}
+                            <span class="badge bg-danger">Failed</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ transaction.status or 'Unknown' }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ transaction.created_date if transaction.created_date else 'N/A' }}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-info" onclick="viewTransaction({{ transaction.id }})">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        {% if transaction.status == 'pending' %}
+                        <button class="btn btn-sm btn-outline-success" onclick="approveTransaction({{ transaction.id }})">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        {% if not transactions %}
+        <div class="text-center py-5">
+            <i class="fas fa-money-bill-wave fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No transactions found</h5>
+            <p class="text-muted">Transactions will appear here when users make payments</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Transaction Detail Modal -->
+<div class="modal fade" id="transactionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Transaction Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="transactionDetails">
+                <!-- Transaction details will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function filterTransactions(status) {
+    const rows = document.querySelectorAll('tbody tr');
+    const buttons = document.querySelectorAll('.btn-group .btn');
+    
+    // Update button states
+    buttons.forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    // Filter rows
+    rows.forEach(row => {
+        const rowStatus = row.getAttribute('data-status');
+        if (status === 'all' || rowStatus === status) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function viewTransaction(transactionId) {
+    // This would fetch transaction details via API
+    document.getElementById('transactionDetails').innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    `;
+    
+    const modal = new bootstrap.Modal(document.getElementById('transactionModal'));
+    modal.show();
+    
+    // Simulate loading details
+    setTimeout(() => {
+        document.getElementById('transactionDetails').innerHTML = `
+            <p><strong>Transaction ID:</strong> ${transactionId}</p>
+            <p><strong>Status:</strong> Completed</p>
+            <p><strong>Payment Hash:</strong> 0x1234...abcd</p>
+            <p><strong>Block Height:</strong> 12345678</p>
+        `;
+    }, 1000);
+}
+
+function approveTransaction(transactionId) {
+    if (confirm('Are you sure you want to approve this transaction?')) {
+        // API call to approve transaction
+        fetch(`/api/transactions/${transactionId}/approve`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error approving transaction: ' + data.message);
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

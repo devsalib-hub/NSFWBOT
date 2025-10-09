@@ -1,0 +1,373 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-cog"></i> Settings</h1>
+</div>
+
+<form method="POST">
+    <div class="row">
+        <!-- Bot Configuration -->
+        <div class="col-md-6">
+            <div class="glass-card p-4 mb-4">
+                <h5><i class="fas fa-robot"></i> Bot Configuration</h5>
+                
+                <div class="mb-3">
+                    <label for="bot_token" class="form-label">Bot Token</label>
+                    <input type="text" class="form-control" id="bot_token" name="bot_token" 
+                           value="{{ settings.get('bot_token', '') }}" 
+                           placeholder="Enter your Telegram bot token">
+                    <div class="form-text">Get this from @BotFather on Telegram</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="webhook_url" class="form-label">Webhook URL</label>
+                    <input type="url" class="form-control" id="webhook_url" name="webhook_url" 
+                           value="{{ settings.get('webhook_url', '') }}" 
+                           placeholder="https://yourdomain.com/webhook">
+                    <div class="form-text">URL where Telegram will send updates</div>
+                </div>
+                
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="bot_active" name="bot_active" 
+                           {% if settings.get('bot_active') == 'true' %}checked{% endif %}>
+                    <label class="form-check-label" for="bot_active">
+                        Bot Active
+                    </label>
+                </div>
+                
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="simulation_mode" name="simulation_mode" 
+                           {% if settings.get('simulation_mode') == 'true' %}checked{% endif %}>
+                    <label class="form-check-label" for="simulation_mode">
+                        Simulation Mode (Sandbox Payments)
+                    </label>
+                </div>
+            </div>
+        </div>
+        
+        <!-- AI Configuration -->
+        <div class="col-md-6">
+            <div class="glass-card p-4 mb-4">
+                <h5><i class="fas fa-brain"></i> AI Configuration</h5>
+                
+                <div class="mb-3">
+                    <label for="openrouter_api_key" class="form-label">OpenRouter API Key</label>
+                    <input type="password" class="form-control" id="openrouter_api_key" name="openrouter_api_key" 
+                           value="{{ settings.get('openrouter_api_key', '') }}" 
+                           placeholder="Enter your OpenRouter API key">
+                    <div class="form-text">Get this from <a href="https://openrouter.ai" target="_blank">OpenRouter.ai</a></div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="openrouter_model" class="form-label">AI Model</label>
+                    <div class="input-group">
+                        <select class="form-control" id="openrouter_model" name="openrouter_model">
+                            <option value="">Loading models...</option>
+                        </select>
+                        <button class="btn btn-outline-secondary" type="button" id="refreshModels" title="Refresh models">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                    <div class="form-text">
+                        Select an AI model from OpenRouter. <span id="modelCount" class="text-muted"></span>
+                    </div>
+                    <div id="modelInfo" class="mt-2" style="display: none;">
+                        <div class="card bg-light">
+                            <div class="card-body p-2">
+                                <small>
+                                    <strong>Description:</strong> <span id="modelDescription"></span><br>
+                                    <strong>Context Length:</strong> <span id="modelContext"></span> tokens<br>
+                                    <strong>Input Types:</strong> <span id="modelInputs"></span><br>
+                                    <strong>Pricing:</strong> $<span id="modelPricing"></span> per 1K tokens
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Payment Configuration -->
+        <div class="col-md-12">
+            <div class="glass-card p-4 mb-4">
+                <h5><i class="fas fa-coins"></i> Payment Configuration</h5>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="ton_wallet" class="form-label">TON Wallet Address</label>
+                            <input type="text" class="form-control" id="ton_wallet" name="ton_wallet" 
+                                   value="{{ settings.get('ton_wallet', '') }}" 
+                                   placeholder="Enter your TON wallet address">
+                            <div class="form-text">Wallet address to receive TON payments</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-info-circle"></i> Payment Methods</h6>
+                            <ul class="mb-0">
+                                <li><strong>TON:</strong> Cryptocurrency payments via TON blockchain</li>
+                                <li><strong>Telegram Stars:</strong> Native Telegram payment system</li>
+                                <li><strong>Simulation:</strong> Test mode with sandbox payments</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Advanced Settings -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="glass-card p-4 mb-4">
+                <h5><i class="fas fa-tools"></i> Advanced Settings</h5>
+                
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="max_image_size" class="form-label">Max Image Size (MB)</label>
+                            <input type="number" class="form-control" id="max_image_size" name="max_image_size" 
+                                   value="{{ settings.get('max_image_size', '10') }}" min="1" max="50">
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="max_video_size" class="form-label">Max Video Size (MB)</label>
+                            <input type="number" class="form-control" id="max_video_size" name="max_video_size" 
+                                   value="{{ settings.get('max_video_size', '50') }}" min="1" max="100">
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="response_timeout" class="form-label">AI Response Timeout (seconds)</label>
+                            <input type="number" class="form-control" id="response_timeout" name="response_timeout" 
+                                   value="{{ settings.get('response_timeout', '30') }}" min="10" max="120">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="d-flex justify-content-between">
+        <button type="submit" class="btn btn-primary btn-lg">
+            <i class="fas fa-save"></i> Save Settings
+        </button>
+        
+        <div>
+            <button type="button" class="btn btn-warning me-2" onclick="testBot()">
+                <i class="fas fa-vial"></i> Test Bot Connection
+            </button>
+            
+            <button type="button" class="btn btn-info" onclick="testAI()">
+                <i class="fas fa-brain"></i> Test AI API
+            </button>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function testBot() {
+    const botToken = document.getElementById('bot_token').value;
+    if (!botToken) {
+        alert('Please enter a bot token first');
+        return;
+    }
+    
+    // Test bot connection
+    fetch(`https://api.telegram.org/bot${botToken}/getMe`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.ok) {
+                alert(`Bot connection successful!\nBot name: ${data.result.first_name}\nUsername: @${data.result.username}`);
+            } else {
+                alert('Bot connection failed: ' + data.description);
+            }
+        })
+        .catch(error => {
+            alert('Error testing bot: ' + error.message);
+        });
+}
+
+let availableModels = [];
+let currentSelectedModel = "{{ settings.get('openrouter_model', '') }}";
+
+function loadOpenRouterModels() {
+    const refreshBtn = document.getElementById('refreshModels');
+    const modelSelect = document.getElementById('openrouter_model');
+    const modelCount = document.getElementById('modelCount');
+    
+    refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    refreshBtn.disabled = true;
+    
+    fetch('/api/openrouter/models')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                availableModels = data.models;
+                populateModelDropdown(data.models);
+                modelCount.textContent = `(${data.total} models available)`;
+            } else {
+                console.error('Failed to load models:', data.error);
+                modelSelect.innerHTML = '<option value="">Failed to load models</option>';
+                modelCount.textContent = '(Error loading models)';
+                alert('Failed to load OpenRouter models: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading models:', error);
+            modelSelect.innerHTML = '<option value="">Error loading models</option>';
+            modelCount.textContent = '(Error loading models)';
+            alert('Error loading models: ' + error.message);
+        })
+        .finally(() => {
+            refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
+            refreshBtn.disabled = false;
+        });
+}
+
+function populateModelDropdown(models) {
+    const modelSelect = document.getElementById('openrouter_model');
+    
+    // Clear existing options
+    modelSelect.innerHTML = '';
+    
+    // Add default option
+    modelSelect.innerHTML += '<option value="">Select a model...</option>';
+    
+    // Group models by provider
+    const groupedModels = {};
+    models.forEach(model => {
+        const provider = model.id.split('/')[0];
+        if (!groupedModels[provider]) {
+            groupedModels[provider] = [];
+        }
+        groupedModels[provider].push(model);
+    });
+    
+    // Add options grouped by provider
+    Object.keys(groupedModels).sort().forEach(provider => {
+        const optgroup = document.createElement('optgroup');
+        optgroup.label = provider.charAt(0).toUpperCase() + provider.slice(1);
+        
+        groupedModels[provider].forEach(model => {
+            const option = document.createElement('option');
+            option.value = model.id;
+            option.textContent = model.name || model.id;
+            option.dataset.description = model.description || '';
+            option.dataset.contextLength = model.context_length || 0;
+            option.dataset.inputModalities = JSON.stringify(model.input_modalities || []);
+            option.dataset.pricing = JSON.stringify(model.pricing || {});
+            
+            if (model.id === currentSelectedModel) {
+                option.selected = true;
+            }
+            
+            optgroup.appendChild(option);
+        });
+        
+        modelSelect.appendChild(optgroup);
+    });
+    
+    // Trigger change event for initially selected model
+    if (currentSelectedModel) {
+        showModelInfo(currentSelectedModel);
+    }
+}
+
+function showModelInfo(modelId) {
+    const modelInfo = document.getElementById('modelInfo');
+    const modelDescription = document.getElementById('modelDescription');
+    const modelContext = document.getElementById('modelContext');
+    const modelInputs = document.getElementById('modelInputs');
+    const modelPricing = document.getElementById('modelPricing');
+    
+    if (!modelId) {
+        modelInfo.style.display = 'none';
+        return;
+    }
+    
+    const selectedOption = document.querySelector(`#openrouter_model option[value="${modelId}"]`);
+    if (selectedOption) {
+        const description = selectedOption.dataset.description || 'No description available';
+        const contextLength = selectedOption.dataset.contextLength || '0';
+        const inputModalities = JSON.parse(selectedOption.dataset.inputModalities || '[]');
+        const pricing = JSON.parse(selectedOption.dataset.pricing || '{}');
+        
+        modelDescription.textContent = description;
+        modelContext.textContent = parseInt(contextLength).toLocaleString();
+        modelInputs.textContent = inputModalities.join(', ') || 'Not specified';
+        
+        // Calculate pricing per 1K tokens
+        const promptPrice = parseFloat(pricing.prompt || 0) * 1000;
+        modelPricing.textContent = promptPrice.toFixed(6);
+        
+        modelInfo.style.display = 'block';
+    } else {
+        modelInfo.style.display = 'none';
+    }
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Load models on page load
+    loadOpenRouterModels();
+    
+    // Refresh button
+    document.getElementById('refreshModels').addEventListener('click', loadOpenRouterModels);
+    
+    // Model selection change
+    document.getElementById('openrouter_model').addEventListener('change', function() {
+        showModelInfo(this.value);
+    });
+});
+
+function testAI() {
+    const apiKey = document.getElementById('openrouter_api_key').value;
+    const model = document.getElementById('openrouter_model').value;
+    
+    if (!apiKey) {
+        alert('Please enter an OpenRouter API key first');
+        return;
+    }
+    
+    // Simple test request
+    fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            model: model,
+            messages: [
+                {role: 'user', content: 'Hello, this is a test message'}
+            ],
+            max_tokens: 10
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.choices) {
+            alert('AI API connection successful!');
+        } else {
+            alert('AI API connection failed: ' + (data.error?.message || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        alert('Error testing AI API: ' + error.message);
+    });
+}
+</script>
+{% endblock %}
