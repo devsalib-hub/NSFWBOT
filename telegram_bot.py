@@ -78,6 +78,8 @@ Use /help for more commands
 
 /start - Start the bot
 /help - Show this help message
+/reset - Reset conversation history
+/testapi - Test AI API connection (Admin only)
 /packages - View available packages
 /dashboard - Check your usage stats
 /balance - Check your remaining credits
@@ -95,6 +97,57 @@ Use /help for more commands
         """
         
         await update.message.reply_text(help_text)
+    
+    async def test_api_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle /testapi command - Test AI API connection"""
+        user_id = update.effective_user.id
+        
+        # Check if user is admin
+        admin_chat_id = self.db.get_setting('admin_chat_id', '0')
+        try:
+            admin_id = int(admin_chat_id) if admin_chat_id else 0
+        except ValueError:
+            admin_id = 0
+            
+        if user_id != admin_id or admin_id == 0:
+            await update.message.reply_text("❌ This command is only available for administrators. Please set your Telegram User ID in the admin dashboard.")
+            return
+        
+        await update.message.reply_text("🧪 Testing AI API connection...")
+        
+        try:
+            # Test the API
+            is_working = await self.ai_handler.test_api_connection()
+            
+            if is_working:
+                await update.message.reply_text("✅ AI API test successful! The connection is working properly.")
+            else:
+                await update.message.reply_text("❌ AI API test failed! Please check your API configuration in the admin dashboard.")
+                
+        except Exception as e:
+            await update.message.reply_text(f"❌ Error testing API: {str(e)}")
+    
+    async def reset_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle /reset command - clear conversation history"""
+        try:
+            user_id = update.effective_user.id
+            
+            # Clear conversation history for this user
+            self.db.clear_conversation_history(user_id)
+            
+            reset_message = """
+🔄 **Conversation Reset Complete!**
+
+Your conversation history has been cleared. The AI will start fresh with no memory of previous messages.
+
+You can now start a new conversation from scratch! 🚀
+            """
+            
+            await update.message.reply_text(reset_message, parse_mode='Markdown')
+            
+        except Exception as e:
+            print(f"Error in reset command: {str(e)}")
+            await update.message.reply_text("Sorry, there was an error resetting your conversation. Please try again later.")
     
     async def packages_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Show available packages"""
@@ -578,6 +631,8 @@ Use /packages to buy more credits!
             # Add handlers
             self.app.add_handler(CommandHandler("start", self.start_command))
             self.app.add_handler(CommandHandler("help", self.help_command))
+            self.app.add_handler(CommandHandler("reset", self.reset_command))
+            self.app.add_handler(CommandHandler("testapi", self.test_api_command))
             self.app.add_handler(CommandHandler("packages", self.packages_command))
             self.app.add_handler(CommandHandler("dashboard", self.dashboard_command))
             self.app.add_handler(CommandHandler("balance", self.balance_command))

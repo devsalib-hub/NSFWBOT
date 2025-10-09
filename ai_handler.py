@@ -1,7 +1,9 @@
 import requests
 import asyncio
 import aiohttp
+import http.client
 import json
+import ssl
 from typing import Optional, Dict, Any
 
 class OpenRouterAPI:
@@ -9,39 +11,85 @@ class OpenRouterAPI:
         self.db = database
         # Get settings from database if available, otherwise use empty defaults
         if self.db:
-            self.api_key = self.db.get_setting('openrouter_api_key', '')
-            self.model = self.db.get_setting('openrouter_model', 'openai/gpt-3.5-turbo')
-            self.base_url = self.db.get_setting('openrouter_base_url', 'https://openrouter.ai/api/v1')
+            self.api_key = self.db.get_setting('ai_api_key', '')
+            self.model = self.db.get_setting('ai_model', 'openai/gpt-3.5-turbo')
+            self.base_url = self.db.get_setting('ai_base_url', 'https://openrouter.ai/api/v1')
         else:
             # No database available, use empty defaults
             self.api_key = ''
             self.model = 'openai/gpt-3.5-turbo'
             self.base_url = 'https://openrouter.ai/api/v1'
+        
+        # Set basic headers - additional headers added dynamically based on provider
         self.headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
-            "HTTP-Referer": "https://telegram.org",
-            "X-Title": "Telegram NSFW Bot"
+            "User-Agent": "TelegramBot/1.0"
         }
+        
+        # Add provider-specific headers
+        self._add_provider_headers()
+    
+    def _add_provider_headers(self):
+        """Add provider-specific headers based on base URL"""
+        if 'openrouter.ai' in self.base_url:
+            # OpenRouter-specific headers
+            self.headers["HTTP-Referer"] = "https://telegram.org"
+            self.headers["X-Title"] = "Telegram NSFW Bot"
+        elif 'venice.ai' in self.base_url:
+            # Venice AI - uses standard OpenAI format, no extra headers needed
+            pass
+        # Add other providers as needed
     
     def refresh_settings(self):
         """Refresh API settings from database"""
         if self.db:
-            self.api_key = self.db.get_setting('openrouter_api_key', '')
-            self.model = self.db.get_setting('openrouter_model', 'openai/gpt-3.5-turbo')
-            self.base_url = self.db.get_setting('openrouter_base_url', 'https://openrouter.ai/api/v1')
-            self.headers["Authorization"] = f"Bearer {self.api_key}"
+            self.api_key = self.db.get_setting('ai_api_key', '')
+            self.model = self.db.get_setting('ai_model', 'openai/gpt-3.5-turbo')
+            self.base_url = self.db.get_setting('ai_base_url', 'https://openrouter.ai/api/v1')
+            
+            # Update headers with new API key and provider-specific headers
+            self.headers = {
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json",
+                "User-Agent": "TelegramBot/1.0"
+            }
+            self._add_provider_headers()
     
     async def generate_text_response(self, user_message: str, user_context: str = None, conversation_history: list = None) -> str:
-        """Generate AI text response using OpenRouter API with conversation context"""
+        """Generate AI text response using direct HTTP connection"""
         try:
             # Refresh settings from database
             self.refresh_settings()
             
             # Check if API key is available
             if not self.api_key:
-                print("❌ OpenRouter API key not configured in database")
+                print("❌ AI API key not configured in database")
                 return "Sorry, the AI service is not properly configured. Please contact the administrator."
+            
+            # Debug logging
+            print(f"🔍 AI API Configuration:")
+            print(f"   Base URL: {self.base_url}")
+            print(f"   Model: {self.model}")
+            print(f"   API Key: {'*' * (len(self.api_key) - 4) + self.api_key[-4:] if len(self.api_key) > 4 else '***'}")
+            
+            # Use direct HTTP connection approach like Venice AI example
+            if 'venice.ai' in self.base_url:
+                return await self._venice_direct_request(user_message, user_context, conversation_history)
+            else:
+                return await self._standard_openai_request(user_message, user_context, conversation_history)
+        
+        except Exception as e:
+            print(f"Error in generate_text_response: {str(e)}")
+            return "Sorry, I encountered an error while generating a response. Please try again."
+    
+    async def _venice_direct_request(self, user_message: str, user_context: str = None, conversation_history: list = None) -> str:
+        """Direct HTTP request to Venice AI"""
+        try:
+            # Extract host from base URL
+            host = self.base_url.replace('https://', '').replace('http://', '').split('/')[0]
+            
+            # Build system prompt
             system_prompt = """You are a helpful AI assistant in a Telegram bot. 
             Respond naturally and helpfully to user messages. Keep responses concise but informative.
             You can handle various topics but maintain appropriate boundaries.
@@ -56,7 +104,73 @@ class OpenRouterAPI:
             # Add conversation history if provided
             if conversation_history:
                 for entry in conversation_history:
-                    # Handle sqlite3.Row objects - use column names directly
+                    user_msg = entry['user_message'] if entry['user_message'] else None
+                    bot_resp = entry['bot_response'] if entry['bot_response'] else None
+                    
+                    if user_msg:
+                        messages.append({"role": "user", "content": user_msg})
+                    if bot_resp:
+                        messages.append({"role": "assistant", "content": bot_resp})
+            
+            # Add current user message
+            messages.append({"role": "user", "content": user_message})
+            
+            # Prepare request data
+            payload = json.dumps({
+                "model": self.model,
+                "messages": messages,
+                "max_tokens": 500,
+                "temperature": 0.7
+            })
+            
+            headers = {
+                'Authorization': f'Bearer {self.api_key}',
+                'Content-Type': 'application/json'
+            }
+            
+            print(f"🔍 Venice Direct Request:")
+            print(f"   Host: {host}")
+            print(f"   Path: /api/v1/chat/completions")
+            print(f"   Headers: {list(headers.keys())}")
+            print(f"   Payload: {payload}")
+            
+            # Use http.client for direct connection like Venice example
+            conn = http.client.HTTPSConnection(host)
+            conn.request("POST", "/api/v1/chat/completions", payload, headers)
+            res = conn.getresponse()
+            data = res.read()
+            
+            print(f"📡 Venice Response Status: {res.status}")
+            print(f"📡 Venice Response: {data.decode('utf-8')}")
+            
+            if res.status == 200:
+                response_data = json.loads(data.decode('utf-8'))
+                return response_data["choices"][0]["message"]["content"].strip()
+            else:
+                print(f"❌ Venice API error: {res.status} - {data.decode('utf-8')}")
+                return "Sorry, I'm having trouble generating a response right now. Please try again later."
+                
+        except Exception as e:
+            print(f"Error in Venice direct request: {str(e)}")
+            return "Sorry, I encountered an error while generating a response. Please try again."
+    
+    async def _standard_openai_request(self, user_message: str, user_context: str = None, conversation_history: list = None) -> str:
+        """Standard OpenAI-compatible request for other providers"""
+        try:
+            system_prompt = """You are a helpful AI assistant in a Telegram bot. 
+            Respond naturally and helpfully to user messages. Keep responses concise but informative.
+            You can handle various topics but maintain appropriate boundaries.
+            Use the conversation history to provide contextual and coherent responses."""
+            
+            if user_context:
+                system_prompt += f"\n\nUser context: {user_context}"
+            
+            # Build messages array with conversation history
+            messages = [{"role": "system", "content": system_prompt}]
+            
+            # Add conversation history if provided
+            if conversation_history:
+                for entry in conversation_history:
                     user_msg = entry['user_message'] if entry['user_message'] else None
                     bot_resp = entry['bot_response'] if entry['bot_response'] else None
                     
@@ -75,12 +189,9 @@ class OpenRouterAPI:
                 "temperature": 0.7
             }
             
-            # Log the request for debugging
-            print(f"🔍 OpenRouter API Request:")
+            print(f"🔍 Standard API Request:")
             print(f"   URL: {self.base_url}/chat/completions")
-            print(f"   Model: {self.model}")
-            print(f"   Messages count: {len(messages)}")
-            print(f"   Request data: {data}")
+            print(f"   Headers: {list(self.headers.keys())}")
             
             async with aiohttp.ClientSession() as session:
                 async with session.post(
@@ -89,22 +200,16 @@ class OpenRouterAPI:
                     json=data,
                     timeout=30
                 ) as response:
-                    # Log the response status
-                    print(f"📡 OpenRouter API Response: {response.status}")
-                    
                     if response.status == 200:
                         result = await response.json()
-                        print(f"✅ API Success: {result}")
                         return result["choices"][0]["message"]["content"].strip()
                     else:
                         error_text = await response.text()
-                        print(f"❌ OpenRouter API error: {response.status} - {error_text}")
+                        print(f"❌ API error: {response.status} - {error_text}")
                         return "Sorry, I'm having trouble generating a response right now. Please try again later."
         
-        except asyncio.TimeoutError:
-            return "Sorry, the response took too long to generate. Please try again."
         except Exception as e:
-            print(f"Error in generate_text_response: {str(e)}")
+            print(f"Error in standard request: {str(e)}")
             return "Sorry, I encountered an error while generating a response. Please try again."
     
     async def generate_image_response(self, user_message: str, image_data: bytes = None, conversation_history: list = None) -> str:
@@ -242,7 +347,63 @@ class OpenRouterAPI:
             return "Thanks for the video! I'm having some technical issues at the moment, but I appreciate you sharing it."
     
     async def test_api_connection(self) -> bool:
-        """Test if the OpenRouter API is working"""
+        """Test if the AI API is working"""
+        try:
+            # Refresh settings
+            self.refresh_settings()
+            
+            if not self.api_key:
+                print("❌ No API key configured")
+                return False
+            
+            # Test Venice AI specifically
+            if 'venice.ai' in self.base_url:
+                return await self._test_venice_api()
+            else:
+                return await self._test_standard_api()
+                
+        except Exception as e:
+            print(f"API test failed: {str(e)}")
+            return False
+    
+    async def _test_venice_api(self) -> bool:
+        """Test Venice AI using direct HTTP like their curl example"""
+        try:
+            # Extract host from base URL
+            host = self.base_url.replace('https://', '').replace('http://', '').split('/')[0]
+            
+            headers = {
+                'Authorization': f'Bearer {self.api_key}'
+            }
+            
+            print(f"🧪 Testing Venice AI API:")
+            print(f"   Host: {host}")
+            print(f"   Path: /api/v1/models")
+            print(f"   API Key: {'*' * (len(self.api_key) - 4) + self.api_key[-4:] if len(self.api_key) > 4 else '***'}")
+            
+            # Use direct HTTP connection like Venice example
+            conn = http.client.HTTPSConnection(host)
+            conn.request("GET", "/api/v1/models", "", headers)
+            res = conn.getresponse()
+            data = res.read()
+            
+            print(f"📡 Venice Models Response Status: {res.status}")
+            print(f"📡 Venice Models Response: {data.decode('utf-8')}")
+            
+            if res.status == 200:
+                models_data = json.loads(data.decode('utf-8'))
+                print(f"✅ Venice API Test Success! Found {len(models_data.get('data', []))} models")
+                return True
+            else:
+                print(f"❌ Venice API Test Failed: {res.status}")
+                return False
+                
+        except Exception as e:
+            print(f"Venice API test error: {str(e)}")
+            return False
+    
+    async def _test_standard_api(self) -> bool:
+        """Test standard OpenAI-compatible API"""
         try:
             test_data = {
                 "model": self.model,
@@ -257,8 +418,15 @@ class OpenRouterAPI:
                     json=test_data,
                     timeout=10
                 ) as response:
-                    return response.status == 200
+                    print(f"📡 Standard API Test Status: {response.status}")
+                    if response.status == 200:
+                        print("✅ Standard API Test Success!")
+                        return True
+                    else:
+                        error_text = await response.text()
+                        print(f"❌ Standard API Test Failed: {response.status} - {error_text}")
+                        return False
         
         except Exception as e:
-            print(f"API test failed: {str(e)}")
+            print(f"Standard API test error: {str(e)}")
             return False

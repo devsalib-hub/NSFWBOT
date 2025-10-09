@@ -207,9 +207,10 @@ def settings():
     if request.method == 'POST':
         # Update basic settings
         bot_token = request.form['bot_token']
-        openrouter_api_key = request.form['openrouter_api_key']
-        openrouter_model = request.form['openrouter_model']
-        openrouter_base_url = request.form['openrouter_base_url']
+        admin_chat_id = request.form['admin_chat_id']
+        ai_api_key = request.form['ai_api_key']
+        ai_model = request.form['ai_model']
+        ai_base_url = request.form['ai_base_url']
         ton_wallet_address = request.form['ton_wallet']
         webhook_url = request.form['webhook_url']
         simulation_mode = 'simulation_mode' in request.form
@@ -246,9 +247,10 @@ def settings():
         # Update in database
         settings_to_update = {
             'bot_token': bot_token,
-            'openrouter_api_key': openrouter_api_key,
-            'openrouter_model': openrouter_model,
-            'openrouter_base_url': openrouter_base_url,
+            'admin_chat_id': admin_chat_id,
+            'ai_api_key': ai_api_key,
+            'ai_model': ai_model,
+            'ai_base_url': ai_base_url,
             'ton_wallet_address': ton_wallet_address,
             'webhook_url': webhook_url,
             'simulation_mode': str(simulation_mode).lower(),

@@ -798,6 +798,22 @@ class Database:
         conn.commit()
         conn.close()
 
+    def clear_conversation_history(self, user_id):
+        """Clear conversation history for a user"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            DELETE FROM message_history 
+            WHERE user_id = ?
+        ''', (user_id,))
+        
+        conn.commit()
+        rows_deleted = cursor.rowcount
+        conn.close()
+        
+        return rows_deleted
+
     def get_user_by_id(self, user_id):
         """Get user by ID"""
         conn = sqlite3.connect(self.db_path)
