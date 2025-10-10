@@ -350,7 +350,10 @@ Use /packages to buy more credits!
                 conversation_history=conversation_history
             )
             
-            # Save to message history with AI model info
+            # Get Venice API metadata for auditing
+            venice_metadata = self.ai_handler.get_last_response_metadata()
+            
+            # Save to message history with AI model info and Venice metadata
             ai_model = self.db.get_setting('openrouter_model', 'openai/gpt-3.5-turbo')
             self.db.save_message_history(
                 user_id, 
@@ -358,7 +361,8 @@ Use /packages to buy more credits!
                 user_message, 
                 ai_response,
                 ai_model=ai_model,
-                context_length=len(conversation_history)
+                context_length=len(conversation_history),
+                venice_metadata=venice_metadata
             )
             
             # Send response
@@ -418,7 +422,10 @@ Use /packages to buy more credits!
                 conversation_history=conversation_history
             )
             
-            # Save to message history with AI model info
+            # Get Venice API metadata for auditing
+            venice_metadata = self.ai_handler.get_last_response_metadata()
+            
+            # Save to message history with AI model info and Venice metadata
             ai_model = self.db.get_setting('openrouter_model', 'openai/gpt-3.5-turbo')
             self.db.save_message_history(
                 user_id, 
@@ -426,7 +433,8 @@ Use /packages to buy more credits!
                 caption, 
                 ai_response,
                 ai_model=ai_model,
-                context_length=len(conversation_history)
+                context_length=len(conversation_history),
+                venice_metadata=venice_metadata
             )
             
             # Send response
@@ -478,7 +486,10 @@ Use /packages to buy more credits!
                 conversation_history=conversation_history
             )
             
-            # Save to message history with AI model info
+            # Get Venice API metadata for auditing
+            venice_metadata = self.ai_handler.get_last_response_metadata()
+            
+            # Save to message history with AI model info and Venice metadata
             ai_model = self.db.get_setting('openrouter_model', 'openai/gpt-3.5-turbo')
             self.db.save_message_history(
                 user_id, 
@@ -486,7 +497,8 @@ Use /packages to buy more credits!
                 caption, 
                 ai_response,
                 ai_model=ai_model,
-                context_length=len(conversation_history)
+                context_length=len(conversation_history),
+                venice_metadata=venice_metadata
             )
             
             # Send response

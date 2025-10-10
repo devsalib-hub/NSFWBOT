@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+
+{% block title %}Message History{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-history"></i> Message History</h2>
+    <div class="text-muted">
+        Total Messages: {{ total_messages | number_format }}
+    </div>
+</div>
+
+<!-- Summary Statistics -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <h6>Total Tokens Used</h6>
+            <h3>{{ stats.token_stats.total_tokens | number_format }}</h3>
+            <small>
+                Prompt: {{ stats.token_stats.prompt_tokens | number_format }} | 
+                Completion: {{ stats.token_stats.completion_tokens | number_format }}
+            </small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card green">
+            <h6>Recent Activity</h6>
+            <h3>{{ stats.recent_activity | number_format }}</h3>
+            <small>Messages in last 24h</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card orange">
+            <h6>Message Types</h6>
+            <div class="small">
+                {% for type, count in stats.message_types.items() %}
+                    <div>{{ type | title }}: {{ count | number_format }}</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card purple">
+            <h6>Top Users</h6>
+            <div class="small">
+                {% for user in stats.top_users[:3] %}
+                    <div>{{ user[1] or user[0] or 'Unknown' }}: {{ user[2] | number_format }}</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Message History Table -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">📝 Message History</h5>
+    </div>
+    <div class="card-body">
+        {% if messages %}
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>User</th>
+                            <th>Type</th>
+                            <th>Message</th>
+                            <th>Venice Metadata</th>
+                            <th>Tokens</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for message in messages %}
+                            <tr>
+                                <td>
+                                    <small class="text-muted">
+                                        {{ message.timestamp | date_format }}
+                                    </small>
+                                </td>
+                                <td>
+                                    <div class="fw-bold">{{ message.first_name or message.username or 'Unknown' }}</div>
+                                    <small class="text-muted">ID: {{ message.user_id }}</small>
+                                </td>
+                                <td>
+                                    <span class="badge 
+                                        {% if message.message_type == 'text' %}bg-primary
+                                        {% elif message.message_type == 'image' %}bg-success
+                                        {% elif message.message_type == 'video' %}bg-warning
+                                        {% else %}bg-secondary{% endif %}">
+                                        {{ message.message_type | title }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="message-content" style="max-width: 300px;">
+                                        {% if message.message_type == 'text' %}
+                                            <div class="text-truncate" title="{{ message.user_message }}">
+                                                {{ message.user_message[:50] }}{% if message.user_message|length > 50 %}...{% endif %}
+                                            </div>
+                                        {% elif message.message_type == 'image' %}
+                                            <i class="fas fa-image text-success"></i> Image Processing
+                                        {% elif message.message_type == 'video' %}
+                                            <i class="fas fa-video text-warning"></i> Video Processing
+                                        {% endif %}
+                                        
+                                        {% if message.bot_response %}
+                                            <hr class="my-2">
+                                            <div class="text-muted small text-truncate" title="{{ message.bot_response }}">
+                                                <strong>AI:</strong> {{ message.bot_response[:80] }}{% if message.bot_response|length > 80 %}...{% endif %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if message.response_id %}
+                                        <div class="small">
+                                            <div><strong>Response ID:</strong></div>
+                                            <div class="text-muted">{{ message.response_id[:20] }}...</div>
+                                            
+                                            {% if message.finish_reason %}
+                                                <div class="mt-1">
+                                                    <span class="badge 
+                                                        {% if message.finish_reason == 'stop' %}bg-success
+                                                        {% elif message.finish_reason == 'length' %}bg-warning
+                                                        {% else %}bg-info{% endif %}">
+                                                        {{ message.finish_reason }}
+                                                    </span>
+                                                </div>
+                                            {% endif %}
+                                            
+                                            {% if message.venice_parameters %}
+                                                <div class="mt-1">
+                                                    <button class="btn btn-sm btn-outline-info" 
+                                                            onclick="showVeniceDetails('{{ message.id }}')">
+                                                        <i class="fas fa-info-circle"></i> Details
+                                                    </button>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted">No metadata</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if message.total_tokens %}
+                                        <div class="small">
+                                            <div><strong>Total:</strong> {{ message.total_tokens | number_format }}</div>
+                                            <div class="text-muted">
+                                                P: {{ message.prompt_tokens | number_format or 0 }} |
+                                                C: {{ message.completion_tokens | number_format or 0 }}
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if total_pages > 1 %}
+                <nav aria-label="Message history pagination">
+                    <ul class="pagination justify-content-center">
+                        {% if has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('message_history', page=prev_num) }}">Previous</a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for page_num in range(1, total_pages + 1) %}
+                            {% if page_num == current_page %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_num }}</span>
+                                </li>
+                            {% elif page_num <= current_page + 2 and page_num >= current_page - 2 %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('message_history', page=page_num) }}">{{ page_num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('message_history', page=next_num) }}">Next</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                
+                <div class="text-center text-muted small">
+                    Showing page {{ current_page }} of {{ total_pages }} 
+                    ({{ total_messages | number_format }} total messages)
+                </div>
+            {% endif %}
+            
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No message history found</h5>
+                <p class="text-muted">Messages will appear here once users start chatting with the bot.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Venice Details Modal -->
+<div class="modal fade" id="veniceDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Venice API Response Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="veniceDetailsContent">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showVeniceDetails(messageId) {
+    const modal = new bootstrap.Modal(document.getElementById('veniceDetailsModal'));
+    const content = document.getElementById('veniceDetailsContent');
+    
+    // Show loading
+    content.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    `;
+    
+    modal.show();
+    
+    // Fetch Venice details (you can implement this endpoint later)
+    fetch(`/api/venice_details/${messageId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                let html = '<div class="row">';
+                
+                // Venice Parameters
+                if (data.venice_parameters) {
+                    html += `
+                        <div class="col-12 mb-3">
+                            <h6>Venice Parameters</h6>
+                            <pre class="bg-light p-3 rounded"><code>${JSON.stringify(data.venice_parameters, null, 2)}</code></pre>
+                        </div>
+                    `;
+                }
+                
+                // Full Response JSON
+                if (data.full_response) {
+                    html += `
+                        <div class="col-12">
+                            <h6>Full Venice API Response</h6>
+                            <pre class="bg-light p-3 rounded" style="max-height: 400px; overflow-y: auto;"><code>${JSON.stringify(data.full_response, null, 2)}</code></pre>
+                        </div>
+                    `;
+                }
+                
+                html += '</div>';
+                content.innerHTML = html;
+            } else {
+                content.innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Unable to load Venice details: ${data.error || 'Unknown error'}
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            content.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-times-circle"></i>
+                    Error loading Venice details: ${error.message}
+                </div>
+            `;
+        });
+}
+</script>
+{% endblock %}

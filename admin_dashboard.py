@@ -5,6 +5,7 @@ from currency_converter import currency_converter
 from ai_handler import OpenRouterAPI
 import json
 import os
+import sqlite3
 from datetime import datetime
 import subprocess
 import sys
@@ -635,6 +636,178 @@ def statistics():
     except Exception as e:
         flash(f'Error loading statistics: {str(e)}')
         return redirect(url_for('dashboard'))
+
+@app.route('/message_history')
+@login_required
+def message_history():
+    """Message history page with Venice API metadata"""
+    try:
+        page = request.args.get('page', 1, type=int)
+        per_page = 20  # Messages per page
+        
+        # Get paginated message history
+        offset = (page - 1) * per_page
+        
+        conn = db.get_connection()
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        # Get total count
+        cursor.execute('SELECT COUNT(*) FROM message_history')
+        total_messages = cursor.fetchone()[0]
+        
+        # Get paginated messages with user info
+        cursor.execute('''
+            SELECT mh.*, u.username, u.first_name 
+            FROM message_history mh
+            LEFT JOIN users u ON mh.user_id = u.user_id
+            ORDER BY mh.timestamp DESC
+            LIMIT ? OFFSET ?
+        ''', (per_page, offset))
+        
+        messages = cursor.fetchall()
+        conn.close()
+        
+        # Calculate pagination info
+        total_pages = (total_messages + per_page - 1) // per_page
+        has_prev = page > 1
+        has_next = page < total_pages
+        
+        # Get summary statistics
+        summary_stats = get_message_history_stats()
+        
+        return render_template('message_history.html', 
+                             messages=messages,
+                             current_page=page,
+                             total_pages=total_pages,
+                             total_messages=total_messages,
+                             has_prev=has_prev,
+                             has_next=has_next,
+                             prev_num=page-1 if has_prev else None,
+                             next_num=page+1 if has_next else None,
+                             stats=summary_stats)
+        
+    except Exception as e:
+        flash(f'Error loading message history: {str(e)}')
+        return redirect(url_for('dashboard'))
+
+def get_message_history_stats():
+    """Get summary statistics for message history"""
+    try:
+        conn = db.get_connection()
+        cursor = conn.cursor()
+        
+        # Total messages by type
+        cursor.execute('''
+            SELECT message_type, COUNT(*) as count
+            FROM message_history 
+            GROUP BY message_type
+        ''')
+        message_types = dict(cursor.fetchall())
+        
+        # Total tokens used
+        cursor.execute('''
+            SELECT 
+                SUM(prompt_tokens) as total_prompt_tokens,
+                SUM(completion_tokens) as total_completion_tokens,
+                SUM(total_tokens) as total_tokens_sum
+            FROM message_history 
+            WHERE total_tokens > 0
+        ''')
+        token_stats = cursor.fetchone()
+        
+        # Most active users
+        cursor.execute('''
+            SELECT u.username, u.first_name, COUNT(*) as message_count
+            FROM message_history mh
+            LEFT JOIN users u ON mh.user_id = u.user_id
+            GROUP BY mh.user_id
+            ORDER BY message_count DESC
+            LIMIT 5
+        ''')
+        top_users = cursor.fetchall()
+        
+        # Recent activity (last 24 hours)
+        cursor.execute('''
+            SELECT COUNT(*) as recent_count
+            FROM message_history 
+            WHERE timestamp >= datetime('now', '-24 hours')
+        ''')
+        recent_activity = cursor.fetchone()[0]
+        
+        conn.close()
+        
+        return {
+            'message_types': message_types,
+            'token_stats': {
+                'prompt_tokens': token_stats[0] or 0,
+                'completion_tokens': token_stats[1] or 0,
+                'total_tokens': token_stats[2] or 0
+            },
+            'top_users': top_users,
+            'recent_activity': recent_activity
+        }
+        
+    except Exception as e:
+        print(f"Error getting message history stats: {e}")
+        return {
+            'message_types': {},
+            'token_stats': {'prompt_tokens': 0, 'completion_tokens': 0, 'total_tokens': 0},
+            'top_users': [],
+            'recent_activity': 0
+        }
+
+@app.route('/api/venice_details/<int:message_id>')
+@login_required
+def get_venice_details(message_id):
+    """Get Venice API details for a specific message"""
+    try:
+        conn = db.get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT venice_parameters, full_response_json
+            FROM message_history 
+            WHERE id = ?
+        ''', (message_id,))
+        
+        result = cursor.fetchone()
+        conn.close()
+        
+        if result:
+            venice_params = None
+            full_response = None
+            
+            # Parse Venice parameters
+            if result[0]:
+                try:
+                    venice_params = json.loads(result[0])
+                except json.JSONDecodeError:
+                    venice_params = {"error": "Invalid JSON format"}
+            
+            # Parse full response
+            if result[1]:
+                try:
+                    full_response = json.loads(result[1])
+                except json.JSONDecodeError:
+                    full_response = {"error": "Invalid JSON format"}
+            
+            return jsonify({
+                'success': True,
+                'venice_parameters': venice_params,
+                'full_response': full_response
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Message not found'
+            })
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
 
 def get_daily_statistics():
     """Get daily statistics for the last 30 days"""

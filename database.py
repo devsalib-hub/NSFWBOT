@@ -121,6 +121,47 @@ class Database:
         except sqlite3.OperationalError:
             pass  # Column already exists
         
+        # Venice API response metadata columns
+        try:
+            cursor.execute('ALTER TABLE message_history ADD COLUMN completion_tokens INTEGER DEFAULT 0')
+        except sqlite3.OperationalError:
+            pass
+        
+        try:
+            cursor.execute('ALTER TABLE message_history ADD COLUMN prompt_tokens INTEGER DEFAULT 0')
+        except sqlite3.OperationalError:
+            pass
+        
+        try:
+            cursor.execute('ALTER TABLE message_history ADD COLUMN total_tokens INTEGER DEFAULT 0')
+        except sqlite3.OperationalError:
+            pass
+        
+        try:
+            cursor.execute('ALTER TABLE message_history ADD COLUMN response_id TEXT')
+        except sqlite3.OperationalError:
+            pass
+        
+        try:
+            cursor.execute('ALTER TABLE message_history ADD COLUMN finish_reason TEXT')
+        except sqlite3.OperationalError:
+            pass
+        
+        try:
+            cursor.execute('ALTER TABLE message_history ADD COLUMN response_created INTEGER DEFAULT 0')
+        except sqlite3.OperationalError:
+            pass
+        
+        try:
+            cursor.execute('ALTER TABLE message_history ADD COLUMN venice_parameters TEXT')  # JSON string
+        except sqlite3.OperationalError:
+            pass
+        
+        try:
+            cursor.execute('ALTER TABLE message_history ADD COLUMN full_response_json TEXT')  # Complete response for audit
+        except sqlite3.OperationalError:
+            pass
+        
         # Admin settings table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS admin_settings (
@@ -385,15 +426,42 @@ class Database:
     
     # Message history methods
     def add_message_history(self, user_id: int, message_type: str, 
-                           user_message: str, bot_response: str):
-        """Add message to history"""
+                           user_message: str, bot_response: str, venice_metadata: dict = None):
+        """Add message to history with Venice API metadata"""
         conn = self.get_connection()
         cursor = conn.cursor()
         
-        cursor.execute('''
-            INSERT INTO message_history (user_id, message_type, user_message, bot_response)
-            VALUES (?, ?, ?, ?)
-        ''', (user_id, message_type, user_message, bot_response))
+        if venice_metadata:
+            # Extract Venice API metadata
+            usage = venice_metadata.get('usage', {})
+            choice = venice_metadata.get('choices', [{}])[0] if venice_metadata.get('choices') else {}
+            venice_params = venice_metadata.get('venice_parameters', {})
+            
+            cursor.execute('''
+                INSERT INTO message_history (
+                    user_id, message_type, user_message, bot_response,
+                    ai_model, completion_tokens, prompt_tokens, total_tokens,
+                    response_id, finish_reason, response_created,
+                    venice_parameters, full_response_json
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                user_id, message_type, user_message, bot_response,
+                venice_metadata.get('model'),
+                usage.get('completion_tokens', 0),
+                usage.get('prompt_tokens', 0), 
+                usage.get('total_tokens', 0),
+                venice_metadata.get('id'),
+                choice.get('finish_reason'),
+                venice_metadata.get('created', 0),
+                json.dumps(venice_params),
+                json.dumps(venice_metadata)
+            ))
+        else:
+            # Fallback for non-Venice responses
+            cursor.execute('''
+                INSERT INTO message_history (user_id, message_type, user_message, bot_response)
+                VALUES (?, ?, ?, ?)
+            ''', (user_id, message_type, user_message, bot_response))
         
         conn.commit()
         conn.close()
@@ -841,16 +909,41 @@ class Database:
         # Return in chronological order (oldest first)
         return list(reversed(history))
 
-    def save_message_history(self, user_id, message_type, user_message, bot_response, ai_model=None, tokens_used=0, cost=0.0, context_length=0):
-        """Save message and response to history"""
+    def save_message_history(self, user_id, message_type, user_message, bot_response, ai_model=None, tokens_used=0, cost=0.0, context_length=0, venice_metadata=None):
+        """Save message and response to history with optional Venice metadata"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
-        cursor.execute('''
-            INSERT INTO message_history 
-            (user_id, message_type, user_message, bot_response, ai_model, tokens_used, cost, context_length, timestamp)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-        ''', (user_id, message_type, user_message, bot_response, ai_model, tokens_used, cost, context_length))
+        if venice_metadata:
+            # Extract Venice API metadata
+            usage = venice_metadata.get('usage', {})
+            choice = venice_metadata.get('choices', [{}])[0] if venice_metadata.get('choices') else {}
+            venice_params = venice_metadata.get('venice_parameters', {})
+            
+            cursor.execute('''
+                INSERT INTO message_history 
+                (user_id, message_type, user_message, bot_response, ai_model, tokens_used, cost, context_length,
+                 completion_tokens, prompt_tokens, total_tokens, response_id, finish_reason, response_created,
+                 venice_parameters, full_response_json, timestamp)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ''', (
+                user_id, message_type, user_message, bot_response, ai_model, tokens_used, cost, context_length,
+                usage.get('completion_tokens', 0),
+                usage.get('prompt_tokens', 0),
+                usage.get('total_tokens', 0),
+                venice_metadata.get('id'),
+                choice.get('finish_reason'),
+                venice_metadata.get('created', 0),
+                json.dumps(venice_params),
+                json.dumps(venice_metadata)
+            ))
+        else:
+            # Fallback for non-Venice responses
+            cursor.execute('''
+                INSERT INTO message_history 
+                (user_id, message_type, user_message, bot_response, ai_model, tokens_used, cost, context_length, timestamp)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ''', (user_id, message_type, user_message, bot_response, ai_model, tokens_used, cost, context_length))
         
         conn.commit()
         conn.close()

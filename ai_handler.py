@@ -27,8 +27,15 @@ class OpenRouterAPI:
             "User-Agent": "TelegramBot/1.0"
         }
         
+        # Store last response metadata for database auditing
+        self.last_response_metadata = None
+        
         # Add provider-specific headers
         self._add_provider_headers()
+    
+    def get_last_response_metadata(self):
+        """Get the metadata from the last Venice API response"""
+        return self.last_response_metadata
     
     def _add_provider_headers(self):
         """Add provider-specific headers based on base URL"""
@@ -149,6 +156,8 @@ class OpenRouterAPI:
             
             if response.status_code == 200:
                 response_data = response.json()
+                # Store complete response for database auditing
+                self.last_response_metadata = response_data
                 return response_data["choices"][0]["message"]["content"].strip()
             elif response.status_code == 429:
                 # Rate limit exceeded - handle with exponential backoff
@@ -383,6 +392,8 @@ class OpenRouterAPI:
                 ) as response:
                     if response.status == 200:
                         result = await response.json()
+                        # Store complete response for database auditing
+                        self.last_response_metadata = result
                         return result["choices"][0]["message"]["content"].strip()
                     else:
                         error_text = await response.text()
@@ -437,6 +448,8 @@ class OpenRouterAPI:
                 ) as response:
                     if response.status == 200:
                         result = await response.json()
+                        # Store complete response for database auditing
+                        self.last_response_metadata = result
                         return result["choices"][0]["message"]["content"].strip()
                     else:
                         return "Thanks for sharing the video! I received it but I'm having some technical difficulties right now."
