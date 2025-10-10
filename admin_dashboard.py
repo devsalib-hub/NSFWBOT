@@ -488,6 +488,34 @@ def update_ton_price():
             'message': f'Error updating TON price: {str(e)}'
         })
 
+@app.route('/api/venice/balance')
+@login_required
+def get_venice_balance():
+    """API endpoint to get Venice USD balance"""
+    try:
+        venice_status = get_venice_api_status()
+        
+        if venice_status.get('error'):
+            return jsonify({
+                'success': False,
+                'balance': '0.00',
+                'error': venice_status['error']
+            })
+        
+        balance = venice_status.get('balance_usd', '0.00')
+        return jsonify({
+            'success': True,
+            'balance': balance,
+            'status': venice_status.get('status', 'unknown')
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'balance': '0.00',
+            'error': f'Error fetching Venice balance: {str(e)}'
+        })
+
 @app.route('/user/<int:user_id>')
 @login_required
 def user_detail(user_id):
