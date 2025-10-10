@@ -126,93 +126,114 @@
         </div>
     </div>
 
-    <!-- Detailed Statistics -->
+    <!-- Venice API Status -->
     <div class="row mb-4">
-        <div class="col-lg-6">
+        <div class="col-12">
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">👥 Recent Users (Last 10)</h6>
+                    <h6 class="m-0 font-weight-bold text-primary">🏛️ Venice API Status</h6>
                 </div>
                 <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-bordered" width="100%" cellspacing="0">
-                            <thead>
-                                <tr>
-                                    <th>Username</th>
-                                    <th>Joined Date</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for user in stats.recent_activity.recent_users %}
-                                <tr>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="mr-3">
-                                                <div class="icon-circle bg-primary">
-                                                    <i class="fas fa-user text-white"></i>
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <div class="font-weight-bold">{{ user.username or 'N/A' }}</div>
-                                                <div class="text-muted">ID: {{ user.user_id }}</div>
-                                            </div>
+                    {% if stats.recent_activity.venice_status.error %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            {{ stats.recent_activity.venice_status.error }}
+                        </div>
+                    {% else %}
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="border-left-success pl-3">
+                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">📡 Status</div>
+                                    <div class="h6 mb-0 font-weight-bold text-gray-800">
+                                        {% if stats.recent_activity.venice_status.status == 'healthy' %}
+                                            <span class="badge badge-success">200 - Online</span>
+                                        {% else %}
+                                            <span class="badge badge-danger">Offline</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="border-left-info pl-3">
+                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">🆔 Request ID</div>
+                                    <div class="h6 mb-0 font-weight-bold text-gray-800" style="font-size: 0.8rem;">
+                                        {{ stats.recent_activity.venice_status.request_id | default('N/A') }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="border-left-warning pl-3">
+                                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">📦 Venice Version</div>
+                                    <div class="h6 mb-0 font-weight-bold text-gray-800" style="font-size: 0.8rem;">
+                                        {{ stats.recent_activity.venice_status.version | default('N/A') }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="border-left-primary pl-3">
+                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">🤖 Model</div>
+                                    <div class="h6 mb-0 font-weight-bold text-gray-800">
+                                        {{ stats.recent_activity.venice_status.model | default('N/A') }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="border-left-secondary pl-3">
+                                    <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">📊 Requests</div>
+                                    <div class="h6 mb-0 font-weight-bold text-gray-800">
+                                        {{ stats.recent_activity.venice_status.requests_used | default('0') }}/{{ stats.recent_activity.venice_status.requests_limit | default('N/A') }}
+                                    </div>
+                                    {% if stats.recent_activity.venice_status.requests_used and stats.recent_activity.venice_status.requests_limit %}
+                                        <div class="progress mt-2" style="height: 5px;">
+                                            <div class="progress-bar bg-info" style="width: {{ (stats.recent_activity.venice_status.requests_used / stats.recent_activity.venice_status.requests_limit * 100) | round }}%"></div>
                                         </div>
-                                    </td>
-                                    <td>{{ user.registration_date | date_format }}</td>
-                                    <td>
-                                        <span class="badge badge-success">Active</span>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-6">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">💳 Recent Transactions (Last 10)</h6>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-bordered" width="100%" cellspacing="0">
-                            <thead>
-                                <tr>
-                                    <th>User</th>
-                                    <th>Amount</th>
-                                    <th>Method</th>
-                                    <th>Date</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for transaction in stats.recent_activity.recent_transactions %}
-                                <tr>
-                                    <td>{{ transaction.username or 'N/A' }}</td>
-                                    <td>
-                                        <strong>{{ transaction.amount | currency }}</strong>
-                                        {% if transaction.payment_method == 'ton' %}
-                                            TON
-                                        {% else %}
-                                            ⭐
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if transaction.payment_method == 'ton' %}
-                                            <span class="badge badge-primary">TON</span>
-                                        {% else %}
-                                            <span class="badge badge-warning text-dark">Stars</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ transaction.created_date | date_format }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="border-left-secondary pl-3">
+                                    <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">🎫 Tokens</div>
+                                    <div class="h6 mb-0 font-weight-bold text-gray-800">
+                                        {{ stats.recent_activity.venice_status.tokens_used | default('0') }}/{{ stats.recent_activity.venice_status.tokens_limit | default('N/A') }}
+                                    </div>
+                                    {% if stats.recent_activity.venice_status.tokens_used and stats.recent_activity.venice_status.tokens_limit %}
+                                        <div class="progress mt-2" style="height: 5px;">
+                                            <div class="progress-bar bg-warning" style="width: {{ (stats.recent_activity.venice_status.tokens_used / stats.recent_activity.venice_status.tokens_limit * 100) | round }}%"></div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="border-left-success pl-3">
+                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">💵 USD Balance</div>
+                                    <div class="h5 mb-0 font-weight-bold text-success">
+                                        ${{ stats.recent_activity.venice_status.balance_usd | default('0.00') }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="border-left-info pl-3">
+                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">⏱️ Last Updated</div>
+                                    <div class="h6 mb-0 font-weight-bold text-gray-800">
+                                        {{ stats.recent_activity.venice_status.timestamp | default('N/A') }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if stats.recent_activity.venice_status.deprecation_warning %}
+                            <div class="alert alert-warning mt-3">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <strong>Model Deprecation Warning:</strong> {{ stats.recent_activity.venice_status.deprecation_warning }}
+                            </div>
+                        {% endif %}
+                    {% endif %}
                 </div>
             </div>
         </div>

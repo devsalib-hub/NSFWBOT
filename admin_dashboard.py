@@ -2,12 +2,14 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for, f
 from werkzeug.security import check_password_hash, generate_password_hash
 from database import Database
 from currency_converter import currency_converter
+from ai_handler import OpenRouterAPI
 import json
 import os
 from datetime import datetime
 import subprocess
 import sys
 import requests
+import asyncio
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-change-this'  # Change this in production
@@ -557,6 +559,27 @@ def get_openrouter_models():
     result = fetch_openrouter_models()
     return jsonify(result)
 
+def get_venice_api_status():
+    """Get Venice API status information"""
+    try:
+        # Initialize AI handler
+        ai_handler = OpenRouterAPI(db)
+        
+        # Get Venice account status using the existing method
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            status = loop.run_until_complete(ai_handler.get_venice_account_status())
+            return status
+        finally:
+            loop.close()
+            
+    except Exception as e:
+        return {
+            'error': f'Failed to get Venice API status: {str(e)}',
+            'status': 'offline'
+        }
+
 @app.route('/statistics')
 @login_required
 def statistics():
@@ -588,8 +611,7 @@ def statistics():
                 'stars_percentage': 0
             },
             'recent_activity': {
-                'recent_users': db.get_recent_users(10),
-                'recent_transactions': db.get_recent_transactions(10)
+                'venice_status': get_venice_api_status()
             },
             'time_based': {
                 'daily_stats': get_daily_statistics(),
