@@ -23,7 +23,7 @@
     </div>
     <div class="col-md-3">
         <div class="glass-card p-3 text-center">
-            <h2 class="text-warning">${{ usd_data.total_usd|currency }}</h2>
+            <h2 class="text-dark">${{ usd_data.total_usd|currency }}</h2>
             <p class="mb-0"><i class="fas fa-dollar-sign"></i> Total Revenue (USD)</p>
         </div>
     </div>
@@ -120,7 +120,7 @@
                                     {% if transaction.payment_method == 'ton' %}
                                         <span class="badge bg-primary">{{ transaction.amount|currency }} 💎</span>
                                     {% elif transaction.payment_method == 'stars' %}
-                                        <span class="badge bg-warning">{{ transaction.amount|currency }} ⭐</span>
+                                        <span class="badge bg-warning text-dark">{{ transaction.amount|currency }} ⭐</span>
                                     {% else %}
                                         <span class="badge bg-success">${{ transaction.amount|currency }}</span>
                                     {% endif %}

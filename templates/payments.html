@@ -146,7 +146,7 @@
                                     {% if payment.payment_method == 'ton' %}
                                         <span class="badge bg-primary">{{ payment.amount|currency }} 💎 </span>
                                     {% elif payment.payment_method == 'stars' %}
-                                        <span class="badge bg-warning">{{ payment.amount|currency }} ⭐</span>
+                                        <span class="badge bg-warning text-dark">{{ payment.amount|currency }} ⭐</span>
                                     {% else %}
                                         <span class="badge bg-success">{{ payment.amount|currency }}</span>
                                     {% endif %}
