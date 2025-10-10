@@ -524,7 +524,7 @@ class Database:
             # Track totals by currency
             if payment_method == 'ton':
                 total_ton += total_amount
-            elif payment_method == 'telegram_stars':
+            elif payment_method == 'stars':
                 total_stars += total_amount
                 
             payment_methods.append({

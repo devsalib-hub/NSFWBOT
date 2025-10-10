@@ -33,9 +33,15 @@
             <div class="revenue-display">
                 {% if total_ton > 0 %}
                     <h5 class="text-warning mb-1">💎 {{ total_ton|currency }} TON</h5>
+                    <small class="text-muted">${{ usd_data.ton_usd|currency }}</small>
                 {% endif %}
                 {% if total_stars > 0 %}
                     <h5 class="text-warning mb-1">⭐ {{ total_stars|currency }} Stars</h5>
+                    <small class="text-muted">${{ usd_data.stars_usd|currency }}</small>
+                {% endif %}
+                {% if total_ton > 0 or total_stars > 0 %}
+                    <hr class="my-1">
+                    <strong class="text-success">${{ usd_data.total_usd|currency }} USD</strong>
                 {% endif %}
                 {% if total_ton == 0 and total_stars == 0 %}
                     <h2 class="text-warning">No Revenue</h2>

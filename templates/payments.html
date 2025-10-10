@@ -9,14 +9,16 @@
 
 <!-- Revenue Summary Cards -->
 <div class="row mb-4">
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="glass-card p-3 text-center">
             <div class="revenue-display">
                 {% if total_ton > 0 %}
                     <h5 class="text-primary mb-1">💎 {{ total_ton|currency }} TON</h5>
+                    <small class="text-muted">${{ usd_data.ton_usd|currency }} USD</small>
                 {% endif %}
                 {% if total_stars > 0 %}
-                                        <h5 class="text-warning mb-1">⭐ {{ total_stars|currency }} Stars</h5>
+                    <h5 class="text-warning mb-1">⭐ {{ total_stars|currency }} Stars</h5>
+                    <small class="text-muted">${{ usd_data.stars_usd|currency }} USD</small>
                 {% endif %}
                 {% if total_ton == 0 and total_stars == 0 %}
                     <h2 class="text-primary">No Revenue</h2>
@@ -25,13 +27,28 @@
             <p class="mb-0"><i class="fas fa-coins"></i> Total Revenue</p>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
+        <div class="glass-card p-3 text-center">
+            <h5 class="text-success mb-1">${{ usd_data.total_usd|currency }}</h5>
+            <small class="text-muted">Total USD Value</small>
+            <div class="mt-2">
+                {% if usd_data.ton_usd > 0 %}
+                    <div><small class="text-muted">TON: ${{ usd_data.ton_usd|currency }}</small></div>
+                {% endif %}
+                {% if usd_data.stars_usd > 0 %}
+                    <div><small class="text-muted">Stars: ${{ usd_data.stars_usd|currency }}</small></div>
+                {% endif %}
+            </div>
+            <p class="mb-0"><i class="fas fa-dollar-sign"></i> USD Equivalent</p>
+        </div>
+    </div>
+    <div class="col-md-3">
         <div class="glass-card p-3 text-center">
             <h2 class="text-success">{{ total_transactions }}</h2>
             <p class="mb-0"><i class="fas fa-receipt"></i> Completed Payments</p>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="glass-card p-3 text-center">
             <h2 class="text-info">{{ paying_users }}</h2>
             <p class="mb-0"><i class="fas fa-users"></i> Paying Users</p>
@@ -167,10 +184,16 @@
                 <div>
                     <small>Current total revenue:</small><br>
                     {% if total_ton > 0 %}
-                        <strong>💎 {{ total_ton|currency }} TON</strong><br>
+                        <strong>💎 {{ total_ton|currency }} TON</strong> 
+                        <span class="text-muted">(${{ usd_data.ton_usd|currency }} USD)</span><br>
                     {% endif %}
                     {% if total_stars > 0 %}
-                        <strong>⭐ {{ total_stars|currency }} Stars</strong><br>
+                        <strong>⭐ {{ total_stars|currency }} Stars</strong>
+                        <span class="text-muted">(${{ usd_data.stars_usd|currency }} USD)</span><br>
+                    {% endif %}
+                    {% if total_ton > 0 or total_stars > 0 %}
+                        <hr class="my-2">
+                        <strong class="text-success">Total: ${{ usd_data.total_usd|currency }} USD</strong>
                     {% endif %}
                     {% if total_ton == 0 and total_stars == 0 %}
                         <strong>No revenue yet</strong>

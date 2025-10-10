@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, session
 from werkzeug.security import check_password_hash, generate_password_hash
 from database import Database
+from currency_converter import currency_converter
 import json
 import os
 from datetime import datetime
@@ -111,6 +112,12 @@ def dashboard():
     total_transactions = db.get_transaction_count()
     payment_stats = db.get_payment_statistics()
     
+    # Get USD conversions
+    usd_data = currency_converter.get_total_usd_value(
+        payment_stats['total_ton'], 
+        payment_stats['total_stars']
+    )
+    
     # Get recent users
     recent_users = db.get_recent_users(10)
     
@@ -124,7 +131,8 @@ def dashboard():
                          total_stars=payment_stats['total_stars'],
                          total_revenue=payment_stats['total_revenue'],
                          recent_users=recent_users,
-                         settings=settings)
+                         settings=settings,
+                         usd_data=usd_data)
 
 @app.route('/users')
 @login_required
@@ -212,6 +220,12 @@ def payments():
     """Detailed payments and revenue view"""
     payment_stats = db.get_payment_statistics()
     
+    # Get USD conversions
+    usd_data = currency_converter.get_total_usd_value(
+        payment_stats['total_ton'], 
+        payment_stats['total_stars']
+    )
+    
     return render_template('payments.html', 
                          payment_methods=payment_stats['payment_methods'],
                          recent_payments=payment_stats['recent_payments'],
@@ -219,7 +233,8 @@ def payments():
                          total_ton=payment_stats['total_ton'],
                          total_stars=payment_stats['total_stars'],
                          total_revenue=payment_stats['total_revenue'],
-                         paying_users=payment_stats['paying_users'])
+                         paying_users=payment_stats['paying_users'],
+                         usd_data=usd_data)
 
 @app.route('/settings', methods=['GET', 'POST'])
 @login_required
