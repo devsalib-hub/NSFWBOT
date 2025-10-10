@@ -118,8 +118,11 @@ def dashboard():
         payment_stats['total_stars']
     )
     
-    # Get recent users
-    recent_users = db.get_recent_users(10)
+    # Get recent users (5)
+    recent_users = db.get_recent_users(5)
+    
+    # Get recent transactions (5)
+    recent_transactions = payment_stats['recent_payments'][:5]
     
     # Get system settings
     settings = db.get_all_settings()
@@ -127,10 +130,8 @@ def dashboard():
     return render_template('dashboard.html', 
                          total_users=total_users,
                          total_transactions=total_transactions,
-                         total_ton=payment_stats['total_ton'],
-                         total_stars=payment_stats['total_stars'],
-                         total_revenue=payment_stats['total_revenue'],
                          recent_users=recent_users,
+                         recent_transactions=recent_transactions,
                          settings=settings,
                          usd_data=usd_data)
 
