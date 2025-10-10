@@ -132,8 +132,8 @@ class OpenRouterAPI:
             
             headers = {
                 'Authorization': f'Bearer {api_key}',  # From database
-                'Content-Type': 'application/json',
-                'Accept-Encoding': 'gzip, br'  # Request compression for efficiency
+                'Content-Type': 'application/json'
+                # Removed 'Accept-Encoding': 'gzip, br' to avoid compression issues
             }
             
             print(f"🔍 Venice Direct Request (FROM DATABASE):")
@@ -153,12 +153,40 @@ class OpenRouterAPI:
             self._log_venice_headers(response)
             
             print(f"📡 Venice Response Status: {response.status_code}")
+            print(f"📄 Venice Response Content Length: {len(response.content) if response.content else 0}")
+            print(f"🔍 Response Headers: {dict(response.headers)}")
+            print(f"📝 Response Encoding: {response.encoding}")
             
             if response.status_code == 200:
-                response_data = response.json()
-                # Store complete response for database auditing
-                self.last_response_metadata = response_data
-                return response_data["choices"][0]["message"]["content"].strip()
+                try:
+                    # Check if response is compressed or has encoding issues
+                    raw_text = response.text
+                    print(f"📄 Raw response preview: {raw_text[:100]}...")
+                    
+                    # Try to parse JSON
+                    response_data = response.json()
+                    print(f"✅ Venice Response JSON parsed successfully")
+                    print(f"📊 Response structure: {list(response_data.keys()) if response_data else 'Empty'}")
+                    
+                    # Store complete response for database auditing
+                    self.last_response_metadata = response_data
+                    
+                    # Extract the AI response content
+                    if "choices" in response_data and len(response_data["choices"]) > 0:
+                        ai_content = response_data["choices"][0]["message"]["content"].strip()
+                        print(f"✨ AI Response: {ai_content[:100]}..." if len(ai_content) > 100 else f"✨ AI Response: {ai_content}")
+                        return ai_content
+                    else:
+                        print(f"❌ No choices found in Venice response: {response_data}")
+                        return "Sorry, I received an unexpected response format from the AI service."
+                        
+                except json.JSONDecodeError as e:
+                    print(f"❌ Venice JSON decode error: {e}")
+                    print(f"📄 Raw response: {response.text[:500]}...")
+                    return "Sorry, I received a malformed response from the AI service."
+                except Exception as e:
+                    print(f"❌ Venice response processing error: {e}")
+                    return "Sorry, I had trouble processing the AI response."
             elif response.status_code == 429:
                 # Rate limit exceeded - handle with exponential backoff
                 return await self._handle_rate_limit(response, user_message, user_context, conversation_history)
