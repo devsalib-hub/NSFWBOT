@@ -168,6 +168,14 @@ class OpenRouterAPI:
                     print(f"✅ Venice Response JSON parsed successfully")
                     print(f"📊 Response structure: {list(response_data.keys()) if response_data else 'Empty'}")
                     
+                    # Log token usage information for cost calculation
+                    if 'usage' in response_data:
+                        usage = response_data['usage']
+                        print(f"🎫 Token Usage:")
+                        print(f"   Prompt Tokens: {usage.get('prompt_tokens', 0):,}")
+                        print(f"   Completion Tokens: {usage.get('completion_tokens', 0):,}")
+                        print(f"   Total Tokens: {usage.get('total_tokens', 0):,}")
+                    
                     # Store complete response for database auditing
                     self.last_response_metadata = response_data
                     

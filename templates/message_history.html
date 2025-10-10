@@ -14,11 +14,11 @@
 <div class="row mb-4">
     <div class="col-md-3">
         <div class="stat-card">
-            <h6>Total Tokens Used</h6>
-            <h3>{{ stats.token_stats.total_tokens | number_format }}</h3>
+            <h6>Total Token Cost</h6>
+            <h3>${{ stats.token_stats.total_cost | number_format }}</h3>
             <small>
-                Prompt: {{ stats.token_stats.prompt_tokens | number_format }} | 
-                Completion: {{ stats.token_stats.completion_tokens | number_format }}
+                Input: ${{ stats.token_stats.input_cost | number_format }} | 
+                Output: ${{ stats.token_stats.output_cost | number_format }}
             </small>
         </div>
     </div>
@@ -67,7 +67,7 @@
                             <th>Type</th>
                             <th>Message</th>
                             <th>Venice Metadata</th>
-                            <th>Tokens</th>
+                            <th>Tokens & Cost</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -146,9 +146,14 @@
                                         <div class="small">
                                             <div><strong>Total:</strong> {{ message.total_tokens | number_format }}</div>
                                             <div class="text-muted">
-                                                P: {{ message.prompt_tokens | number_format or 0 }} |
-                                                C: {{ message.completion_tokens | number_format or 0 }}
+                                                Input: {{ message.prompt_tokens | number_format or 0 }} |
+                                                Output: {{ message.completion_tokens | number_format or 0 }}
                                             </div>
+                                            {% if message.cost %}
+                                                <div class="mt-1">
+                                                    <span class="badge bg-success">${{ "%.6f"|format(message.cost) }}</span>
+                                                </div>
+                                            {% endif %}
                                         </div>
                                     {% else %}
                                         <span class="text-muted">-</span>

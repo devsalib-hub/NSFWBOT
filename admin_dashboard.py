@@ -305,6 +305,10 @@ def settings():
         context_window_hours = request.form.get('context_window_hours', '24')
         enable_conversation_memory = request.form.get('enable_conversation_memory', 'true')
         
+        # Token pricing settings
+        input_token_price_per_1m = request.form.get('input_token_price_per_1m', '0.50')
+        output_token_price_per_1m = request.form.get('output_token_price_per_1m', '1.50')
+        
         # Dashboard settings
         dashboard_host = request.form.get('dashboard_host', '127.0.0.1')
         dashboard_port = request.form.get('dashboard_port', '5000')
@@ -336,6 +340,8 @@ def settings():
             'conversation_history_length': conversation_history_length,
             'context_window_hours': context_window_hours,
             'enable_conversation_memory': enable_conversation_memory,
+            'input_token_price_per_1m': input_token_price_per_1m,
+            'output_token_price_per_1m': output_token_price_per_1m,
             'dashboard_host': dashboard_host,
             'dashboard_port': dashboard_port,
             'admin_username': admin_username,
@@ -705,12 +711,13 @@ def get_message_history_stats():
         ''')
         message_types = dict(cursor.fetchall())
         
-        # Total tokens used
+        # Total tokens used and cost
         cursor.execute('''
             SELECT 
                 SUM(prompt_tokens) as total_prompt_tokens,
                 SUM(completion_tokens) as total_completion_tokens,
-                SUM(total_tokens) as total_tokens_sum
+                SUM(total_tokens) as total_tokens_sum,
+                SUM(cost) as total_cost_usd
             FROM message_history 
             WHERE total_tokens > 0
         ''')
@@ -742,7 +749,10 @@ def get_message_history_stats():
             'token_stats': {
                 'prompt_tokens': token_stats[0] or 0,
                 'completion_tokens': token_stats[1] or 0,
-                'total_tokens': token_stats[2] or 0
+                'total_tokens': token_stats[2] or 0,
+                'total_cost': token_stats[3] or 0,
+                'input_cost': 0,  # Could calculate separately if needed
+                'output_cost': 0  # Could calculate separately if needed
             },
             'top_users': top_users,
             'recent_activity': recent_activity
@@ -752,7 +762,7 @@ def get_message_history_stats():
         print(f"Error getting message history stats: {e}")
         return {
             'message_types': {},
-            'token_stats': {'prompt_tokens': 0, 'completion_tokens': 0, 'total_tokens': 0},
+            'token_stats': {'prompt_tokens': 0, 'completion_tokens': 0, 'total_tokens': 0, 'total_cost': 0, 'input_cost': 0, 'output_cost': 0},
             'top_users': [],
             'recent_activity': 0
         }

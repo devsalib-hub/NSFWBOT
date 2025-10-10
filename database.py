@@ -225,7 +225,10 @@ class Database:
             ("free_messages", "1"),
             ("openrouter_model", "openai/gpt-3.5-turbo"),
             ("payment_stars_enabled", "true"),
-            ("payment_ton_enabled", "true")
+            ("payment_ton_enabled", "true"),
+            # Token pricing settings (Venice AI default pricing)
+            ("input_token_price_per_1m", "0.50"),    # $0.50 per 1M input tokens
+            ("output_token_price_per_1m", "1.50")    # $1.50 per 1M output tokens
         ]
         
         for key, value in default_settings:
@@ -909,6 +912,35 @@ class Database:
         # Return in chronological order (oldest first)
         return list(reversed(history))
 
+    def calculate_message_cost(self, prompt_tokens, completion_tokens):
+        """Calculate the USD cost of a message based on token usage and pricing settings"""
+        try:
+            # Get token pricing from database settings
+            input_price_per_1m = float(self.get_setting('input_token_price_per_1m', '0.50'))
+            output_price_per_1m = float(self.get_setting('output_token_price_per_1m', '1.50'))
+            
+            # Calculate costs (price is per 1 million tokens)
+            input_cost = (prompt_tokens / 1_000_000) * input_price_per_1m
+            output_cost = (completion_tokens / 1_000_000) * output_price_per_1m
+            total_cost = input_cost + output_cost
+            
+            return {
+                'input_cost': round(input_cost, 6),
+                'output_cost': round(output_cost, 6),
+                'total_cost': round(total_cost, 6),
+                'input_tokens': prompt_tokens,
+                'output_tokens': completion_tokens
+            }
+        except (ValueError, TypeError) as e:
+            print(f"Error calculating message cost: {e}")
+            return {
+                'input_cost': 0.0,
+                'output_cost': 0.0,
+                'total_cost': 0.0,
+                'input_tokens': prompt_tokens or 0,
+                'output_tokens': completion_tokens or 0
+            }
+
     def save_message_history(self, user_id, message_type, user_message, bot_response, ai_model=None, tokens_used=0, cost=0.0, context_length=0, venice_metadata=None):
         """Save message and response to history with optional Venice metadata"""
         conn = sqlite3.connect(self.db_path)
@@ -920,6 +952,20 @@ class Database:
             choice = venice_metadata.get('choices', [{}])[0] if venice_metadata.get('choices') else {}
             venice_params = venice_metadata.get('venice_parameters', {})
             
+            # Extract token counts
+            prompt_tokens = usage.get('prompt_tokens', 0)
+            completion_tokens = usage.get('completion_tokens', 0)
+            total_tokens = usage.get('total_tokens', 0)
+            
+            # Calculate cost based on token usage
+            cost_info = self.calculate_message_cost(prompt_tokens, completion_tokens)
+            calculated_cost = cost_info['total_cost']
+            
+            print(f"💰 Message Cost Calculation:")
+            print(f"   Input Tokens: {prompt_tokens:,} = ${cost_info['input_cost']:.6f}")
+            print(f"   Output Tokens: {completion_tokens:,} = ${cost_info['output_cost']:.6f}")
+            print(f"   Total Cost: ${calculated_cost:.6f}")
+            
             cursor.execute('''
                 INSERT INTO message_history 
                 (user_id, message_type, user_message, bot_response, ai_model, tokens_used, cost, context_length,
@@ -927,10 +973,10 @@ class Database:
                  venice_parameters, full_response_json, timestamp)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             ''', (
-                user_id, message_type, user_message, bot_response, ai_model, tokens_used, cost, context_length,
-                usage.get('completion_tokens', 0),
-                usage.get('prompt_tokens', 0),
-                usage.get('total_tokens', 0),
+                user_id, message_type, user_message, bot_response, ai_model, tokens_used, calculated_cost, context_length,
+                completion_tokens,
+                prompt_tokens,
+                total_tokens,
                 venice_metadata.get('id'),
                 choice.get('finish_reason'),
                 venice_metadata.get('created', 0),
