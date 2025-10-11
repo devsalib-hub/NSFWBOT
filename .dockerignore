@@ -1,0 +1,67 @@
+# Docker build files
+Dockerfile*
+docker-compose*
+
+# Cache and temporary files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Local database files (will be in mounted volume)
+bot_database.db
+bot_database_backup_*.db
+*.db
+
+# Log files (will be in mounted volume)
+*.log
+logs/
+
+# Environment files (handled separately)
+.env
+.env.local
+.env.production
+
+# Git files
+.git/
+.gitignore
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Documentation
+README.md
+*.md
+
+# Test files
+test_*
+*_test.py
+
+# Backup files
+*.bak
+*.backup
+
+# Node modules (if any)
+node_modules/
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+
+# Virtual environments
+venv/
+env/
+.env/

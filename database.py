@@ -23,7 +23,16 @@ def format_precise_number(value):
         return str(value)
 
 class Database:
-    def __init__(self, db_path: str = "bot_database.db"):
+    def __init__(self, db_path: str = None):
+        if db_path is None:
+            # Use environment variable or default
+            db_path = os.getenv('DATABASE_PATH', 'bot_database.db')
+        
+        # Ensure directory exists
+        db_dir = os.path.dirname(db_path)
+        if db_dir and not os.path.exists(db_dir):
+            os.makedirs(db_dir, exist_ok=True)
+        
         self.db_path = db_path
         self.init_database()
     
