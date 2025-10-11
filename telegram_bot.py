@@ -689,13 +689,16 @@ Example: `/enterreferral ABC12345`
             
             for package in packages:
                 row = []
-                if Config.TELEGRAM_STARS_ENABLED:
+                telegram_stars_enabled = self.db.get_setting('telegram_stars_enabled', 'true') == 'true'
+                ton_enabled = self.db.get_setting('ton_enabled', 'true') == 'true'
+                
+                if telegram_stars_enabled:
                     row.append(InlineKeyboardButton(
                         f"⭐ {package['name']} ({package['price_stars']} Stars)",
                         callback_data=f"buy_stars_{package['id']}"
                     ))
                 
-                if Config.TON_ENABLED:
+                if ton_enabled:
                     row.append(InlineKeyboardButton(
                         f"💎 {package['name']} ({package['price_ton']} TON)",
                         callback_data=f"buy_ton_{package['id']}"
@@ -707,8 +710,48 @@ Example: `/enterreferral ABC12345`
             await query.edit_message_text("📦 Select a package:", reply_markup=reply_markup)
         
         elif data == "refresh_dashboard":
-            # Refresh dashboard
-            await self.dashboard_command(update, context)
+            # Refresh dashboard for callback query
+            user_id = query.from_user.id
+            user_data = self.db.get_user(user_id)
+            
+            if not user_data:
+                await query.edit_message_text("Please start the bot first with /start")
+                return
+            
+            # Get free message settings from database
+            free_settings = self.db.get_free_message_settings()
+            
+            # Calculate remaining free messages for each type
+            free_text_left = max(0, free_settings['free_text_messages'] - user_data.get('free_text_messages_used', 0))
+            free_image_left = max(0, free_settings['free_image_messages'] - user_data.get('free_image_messages_used', 0))
+            free_video_left = max(0, free_settings['free_video_messages'] - user_data.get('free_video_messages_used', 0))
+            
+            dashboard_text = f"""
+📊 Your Dashboard
+
+👤 User: {user_data['first_name']} {user_data['last_name'] or ''}
+📅 Member since: {user_data['registration_date'][:10]}
+
+🎁 Free Messages Remaining:
+📝 Text: {free_text_left}/{free_settings['free_text_messages']}
+🖼️ Images: {free_image_left}/{free_settings['free_image_messages']}
+🎥 Videos: {free_video_left}/{free_settings['free_video_messages']}
+
+💬 Paid Credits:
+📝 Text: {user_data['text_messages_left']}
+🖼️ Images: {user_data['image_messages_left']}
+🎥 Videos: {user_data['video_messages_left']}
+
+💰 Total Spent: ${user_data['total_spent']}
+            """
+            
+            keyboard = [
+                [InlineKeyboardButton("📦 Buy Packages", callback_data="show_packages")],
+                [InlineKeyboardButton("🔄 Refresh", callback_data="refresh_dashboard")]
+            ]
+            
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            await query.edit_message_text(dashboard_text, reply_markup=reply_markup)
         
         elif data == "show_referrals":
             # Show user's referral details
@@ -737,6 +780,11 @@ Example: `/enterreferral ABC12345`
         elif data == "back_to_referral":
             # Go back to referral main screen
             await self.referral_command(update, context)
+        
+        elif data.startswith("check_payment_"):
+            # Check payment status
+            transaction_id = int(data.split("_")[2])
+            await self.handle_check_payment(query, transaction_id)
     
     async def handle_stars_purchase(self, query, package_id: int):
         """Handle Telegram Stars purchase"""
@@ -751,13 +799,7 @@ Example: `/enterreferral ABC12345`
         result = await self.payment_handler.create_stars_payment(user_id, package_id, amount)
         
         if result['success']:
-            # Get simulation mode from database
-            simulation_mode = self.db.get_setting('simulation_mode', 'false') == 'true'
-            
-            if simulation_mode:
-                await query.edit_message_text(result['message'])
-            else:
-                # Create invoice for real payment
+            # Create invoice for real payment
                 title = f"Package: {package['name']}"
                 description = f"{package['description']}\n📝 {package['text_count']} text\n🖼️ {package['image_count']} images\n🎥 {package['video_count']} videos"
                 
@@ -787,13 +829,7 @@ Example: `/enterreferral ABC12345`
         result = await self.payment_handler.create_ton_payment(user_id, package_id, amount)
         
         if result['success']:
-            # Get simulation mode from database
-            simulation_mode = self.db.get_setting('simulation_mode', 'false') == 'true'
-            
-            if simulation_mode:
-                await query.edit_message_text(result['message'])
-            else:
-                message = f"""
+            message = f"""
 💎 TON Payment Instructions {result.get('network', '')}
 
 📦 Package: {package['name']}
@@ -807,16 +843,131 @@ Example: `/enterreferral ABC12345`
 ⏰ Your payment will be verified automatically within a few minutes.
 
 {result.get('network', '🌐 MAINNET') if '🧪' not in result.get('network', '') else '🧪 Note: This is TESTNET - you will receive test TON only!'}
-                """
-                
-                keyboard = [[
-                    InlineKeyboardButton("🔗 Pay with Tonkeeper", url=result['payment_url'])
-                ]]
-                
-                reply_markup = InlineKeyboardMarkup(keyboard)
-                await query.edit_message_text(message, reply_markup=reply_markup, parse_mode='Markdown')
+            """
+            
+            keyboard = [
+                [InlineKeyboardButton("🔗 Pay with Tonkeeper", url=result['payment_url'])],
+                [InlineKeyboardButton("🔍 Check Payment Status", callback_data=f"check_payment_{result['transaction_id']}")]
+            ]
+            
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            await query.edit_message_text(message, reply_markup=reply_markup, parse_mode='Markdown')
         else:
             await query.edit_message_text(f"❌ {result['error']}")
+    
+    async def handle_check_payment(self, query, transaction_id: int):
+        """Check TON payment status"""
+        try:
+            # Get transaction details
+            conn = self.db.get_connection()
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                SELECT status, payment_method, amount, created_date, user_id, package_id 
+                FROM transactions 
+                WHERE id = ?
+            ''', (transaction_id,))
+            
+            result = cursor.fetchone()
+            conn.close()
+            
+            if not result:
+                await query.edit_message_text("❌ Transaction not found.")
+                return
+            
+            status, payment_method, amount, created_date, user_id, package_id = result
+            
+            # Check if this transaction belongs to the current user
+            if user_id != query.from_user.id:
+                await query.edit_message_text("❌ This transaction doesn't belong to you.")
+                return
+            
+            if status == 'completed':
+                await query.edit_message_text("✅ Payment already completed! Your credits have been added.")
+                return
+            
+            if payment_method == 'ton':
+                # Try to verify the TON payment
+                await query.edit_message_text("🔍 Checking blockchain for your payment...")
+                
+                verification_success = await self.payment_handler.verify_ton_payment(transaction_id)
+                
+                if verification_success:
+                    # Payment found and verified!
+                    package = self.db.get_package(package_id)
+                    message = f"""
+✅ **Payment Verified!**
+
+💰 Amount: {amount} TON
+📦 Package: {package['name'] if package else 'Unknown'}
+📅 Date: {created_date}
+
+🎉 Your credits have been added to your account!
+                    """
+                    
+                    # Add buttons to go back or check dashboard
+                    keyboard = [
+                        [InlineKeyboardButton("📊 View Dashboard", callback_data="refresh_dashboard")],
+                        [InlineKeyboardButton("🛒 Buy More", callback_data="show_packages")]
+                    ]
+                    reply_markup = InlineKeyboardMarkup(keyboard)
+                    
+                    await query.edit_message_text(message, reply_markup=reply_markup, parse_mode='Markdown')
+                    
+                    # Notify admin about successful payment
+                    admin_chat_id = self.db.get_setting('admin_chat_id')
+                    if admin_chat_id:
+                        admin_message = f"""
+💰 **Payment Received!**
+
+👤 User: {query.from_user.first_name} (@{query.from_user.username or 'no_username'})
+💰 Amount: {amount} TON
+📦 Package: {package['name'] if package else 'Unknown'}
+🆔 Transaction: {transaction_id}
+📅 Date: {created_date}
+                        """
+                        try:
+                            await self.app.bot.send_message(admin_chat_id, admin_message, parse_mode='Markdown')
+                        except Exception as e:
+                            logging.error(f"Failed to notify admin: {e}")
+                else:
+                    # Payment not found yet
+                    message = f"""
+⏳ **Payment Pending**
+
+💰 Amount: {amount} TON
+📅 Created: {created_date}
+🆔 Transaction ID: {transaction_id}
+
+❌ Payment not found on blockchain yet.
+
+**Please make sure you:**
+✅ Sent exactly {amount} TON
+✅ Used the correct comment: `Payment_{transaction_id}`
+✅ Sent to the correct wallet address
+
+⏰ It may take a few minutes for the transaction to appear on the blockchain.
+                    """
+                    
+                    keyboard = [[
+                        InlineKeyboardButton("🔍 Check Again", callback_data=f"check_payment_{transaction_id}")
+                    ]]
+                    reply_markup = InlineKeyboardMarkup(keyboard)
+                    
+                    await query.edit_message_text(message, reply_markup=reply_markup, parse_mode='Markdown')
+            else:
+                await query.edit_message_text("ℹ️ This feature is only available for TON payments.")
+                
+        except Exception as e:
+            logging.error(f"Error checking payment: {e}")
+            await query.edit_message_text("❌ Error checking payment status. Please try again.")
+    
+    async def check_pending_payments_task(self, context: ContextTypes.DEFAULT_TYPE):
+        """Background task to check pending payments every 2 minutes"""
+        try:
+            await self.payment_handler.check_pending_payments()
+        except Exception as e:
+            logging.error(f"Error in payment check task: {e}")
     
     async def handle_successful_payment(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle successful Telegram Stars payment"""
@@ -904,6 +1055,17 @@ Example: `/enterreferral ABC12345`
             
             # Set up bot menu after initialization
             self.app.post_init = self.setup_bot_menu
+            
+            # Schedule background task to check pending payments every 2 minutes (if job queue is available)
+            try:
+                job_queue = self.app.job_queue
+                if job_queue:
+                    job_queue.run_repeating(self.check_pending_payments_task, interval=120, first=30)
+                    logger.info("✅ Background payment checker scheduled")
+                else:
+                    logger.warning("⚠️ JobQueue not available. Install with: pip install 'python-telegram-bot[job-queue]'")
+            except Exception as e:
+                logger.warning(f"⚠️ Could not set up background payment checker: {e}")
             
             logger.info("Bot starting...")
             

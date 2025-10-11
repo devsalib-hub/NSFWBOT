@@ -279,7 +279,6 @@ class Database:
         
         default_settings = [
             ("bot_running", "true"),
-            ("simulation_mode", "false"),
             ("free_messages", "1"),
             ("openrouter_model", "openai/gpt-3.5-turbo"),
             ("payment_stars_enabled", "true"),

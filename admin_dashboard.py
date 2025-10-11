@@ -322,15 +322,15 @@ def settings():
         ai_api_key = request.form['ai_api_key']
         ai_model = request.form['ai_model']
         ai_base_url = request.form['ai_base_url']
-        ton_wallet_address = request.form['ton_wallet']
+        ton_mainnet_wallet_address = request.form['ton_mainnet_wallet']
+        ton_testnet_wallet_address = request.form['ton_testnet_wallet']
+        ton_network_mode = request.form['ton_network_mode']
         webhook_url = request.form['webhook_url']
-        simulation_mode = 'simulation_mode' in request.form
         bot_active = 'bot_active' in request.form
         
         # Payment method settings
         telegram_stars_enabled = 'telegram_stars_enabled' in request.form
         ton_enabled = 'ton_enabled' in request.form
-        ton_testnet_mode = 'ton_testnet_mode' in request.form
         ton_api_key = request.form.get('ton_api_key', '')
         
         # Free messages and rate limiting settings
@@ -378,13 +378,13 @@ def settings():
             'ai_api_key': ai_api_key,
             'ai_model': ai_model,
             'ai_base_url': ai_base_url,
-            'ton_wallet_address': ton_wallet_address,
+            'ton_mainnet_wallet_address': ton_mainnet_wallet_address,
+            'ton_testnet_wallet_address': ton_testnet_wallet_address,
+            'ton_network_mode': ton_network_mode,
             'webhook_url': webhook_url,
-            'simulation_mode': str(simulation_mode).lower(),
             'bot_active': str(bot_active).lower(),
             'telegram_stars_enabled': str(telegram_stars_enabled).lower(),
             'ton_enabled': str(ton_enabled).lower(),
-            'ton_testnet_mode': str(ton_testnet_mode).lower(),
             'ton_api_key': ton_api_key,
             'free_text_messages': free_text_messages,
             'free_image_messages': free_image_messages,
@@ -451,16 +451,6 @@ def stop_bot():
         return jsonify({'success': True, 'message': 'Bot stopped successfully!'})
     except Exception as e:
         return jsonify({'success': False, 'message': f'Error stopping bot: {str(e)}'})
-
-@app.route('/api/simulation/toggle', methods=['POST'])
-@login_required
-def toggle_simulation():
-    current_mode = db.get_setting('simulation_mode')
-    new_mode = 'false' if current_mode == 'true' else 'true'
-    db.update_setting('simulation_mode', new_mode)
-    
-    mode_text = 'enabled' if new_mode == 'true' else 'disabled'
-    return jsonify({'success': True, 'message': f'Simulation mode {mode_text}!'})
 
 @app.route('/api/stats')
 @login_required
@@ -1048,7 +1038,6 @@ if __name__ == '__main__':
         db.update_setting('openrouter_model', 'openai/gpt-3.5-turbo')
         db.update_setting('ton_wallet', '')
         db.update_setting('webhook_url', '')
-        db.update_setting('simulation_mode', 'true')
         db.update_setting('bot_active', 'false')
     
     app.run(debug=True, host='0.0.0.0', port=5000)

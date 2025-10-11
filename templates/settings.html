@@ -46,14 +46,6 @@
                         Bot Active
                     </label>
                 </div>
-                
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="simulation_mode" name="simulation_mode" 
-                           {% if settings.get('simulation_mode') == 'true' %}checked{% endif %}>
-                    <label class="form-check-label" for="simulation_mode">
-                        Simulation Mode (Sandbox Payments)
-                    </label>
-                </div>
             </div>
         </div>
         
@@ -152,14 +144,6 @@
                 <h5><i class="fas fa-coins"></i> Payment Configuration</h5>
                 
                 <div class="mb-3">
-                    <label for="ton_wallet" class="form-label">TON Wallet Address</label>
-                    <input type="text" class="form-control" id="ton_wallet" name="ton_wallet" 
-                           value="{{ settings.get('ton_wallet_address', '') }}" 
-                           placeholder="Enter your TON wallet address">
-                    <div class="form-text">Wallet address to receive TON payments</div>
-                </div>
-                
-                <div class="mb-3">
                     <label class="form-label">Payment Methods</label>
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" id="telegram_stars_enabled" name="telegram_stars_enabled" 
@@ -175,14 +159,35 @@
                             <i class="fas fa-coins text-primary"></i> Enable TON Payments
                         </label>
                     </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="ton_testnet_mode" name="ton_testnet_mode" 
-                               {% if settings.get('ton_testnet_mode', 'true') == 'true' %}checked{% endif %}>
-                        <label class="form-check-label" for="ton_testnet_mode">
-                            <i class="fas fa-flask text-info"></i> TON Testnet Mode (Sandbox)
-                        </label>
-                        <div class="form-text">Use TON testnet for safe testing with fake tokens</div>
-                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="ton_network_mode" class="form-label">TON Network Mode</label>
+                    <select class="form-select" id="ton_network_mode" name="ton_network_mode">
+                        <option value="sandbox" {% if settings.get('ton_network_mode', 'sandbox') == 'sandbox' %}selected{% endif %}>
+                            🧪 Sandbox (Testnet) - Safe testing with fake tokens
+                        </option>
+                        <option value="mainnet" {% if settings.get('ton_network_mode', 'sandbox') == 'mainnet' %}selected{% endif %}>
+                            💎 Mainnet - Real TON transactions
+                        </option>
+                    </select>
+                    <div class="form-text">Choose between sandbox testing and live mainnet transactions</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="ton_mainnet_wallet" class="form-label">Mainnet Wallet Address</label>
+                    <input type="text" class="form-control" id="ton_mainnet_wallet" name="ton_mainnet_wallet" 
+                           value="{{ settings.get('ton_mainnet_wallet_address', '') }}" 
+                           placeholder="Enter your mainnet TON wallet address">
+                    <div class="form-text">Wallet address for receiving real TON payments</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="ton_testnet_wallet" class="form-label">Testnet Wallet Address</label>
+                    <input type="text" class="form-control" id="ton_testnet_wallet" name="ton_testnet_wallet" 
+                           value="{{ settings.get('ton_testnet_wallet_address', '') }}" 
+                           placeholder="Enter your testnet TON wallet address">
+                    <div class="form-text">Wallet address for sandbox testing (same as mainnet address works)</div>
                 </div>
                 
                 <div class="mb-3">

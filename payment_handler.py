@@ -10,12 +10,19 @@ from database import Database
 class PaymentHandler:
     def __init__(self, db: Database):
         self.db = db
-        self.simulation_mode = self.db.get_setting('simulation_mode', 'true').lower() == 'true'
-        self.ton_testnet = self.db.get_setting('ton_testnet_mode', 'true').lower() == 'true'
+        self.ton_network_mode = self.db.get_setting('ton_network_mode', 'sandbox')
+        self.ton_testnet = self.ton_network_mode == 'sandbox'
         
         # TON API endpoints
         self.ton_api_endpoint = "https://testnet.toncenter.com/api/v2/" if self.ton_testnet else "https://toncenter.com/api/v2/"
         self.ton_api_key = self.db.get_setting('ton_api_key', '')  # Optional API key for higher limits
+        
+    def get_ton_wallet_address(self) -> str:
+        """Get appropriate TON wallet address based on network mode"""
+        if self.ton_network_mode == 'sandbox':
+            return self.db.get_setting('ton_testnet_wallet_address', '')
+        else:
+            return self.db.get_setting('ton_mainnet_wallet_address', '')
         
     async def create_stars_payment(self, user_id: int, package_id: int, amount: int) -> Dict[str, Any]:
         """Create Telegram Stars payment"""
@@ -23,33 +30,6 @@ class PaymentHandler:
             package = self.db.get_package(package_id)
             if not package:
                 return {"success": False, "error": "Package not found"}
-            
-            if self.simulation_mode:
-                # In simulation mode, auto-approve payment
-                transaction_id = self.db.create_transaction(
-                    user_id, package_id, "stars", amount
-                )
-                
-                # Simulate payment verification delay
-                await asyncio.sleep(2)
-                
-                # Auto-complete transaction in simulation
-                self.db.complete_transaction(transaction_id, f"sim_stars_{transaction_id}")
-                
-                # Add credits to user
-                self.db.add_message_credits(
-                    user_id, 
-                    package['text_count'], 
-                    package['image_count'], 
-                    package['video_count']
-                )
-                
-                return {
-                    "success": True,
-                    "transaction_id": transaction_id,
-                    "payment_url": None,
-                    "message": "✅ Simulation payment completed successfully!"
-                }
             
             # Real Telegram Stars payment
             transaction_id = self.db.create_transaction(
@@ -94,64 +74,28 @@ class PaymentHandler:
             if not package:
                 return {"success": False, "error": "Package not found"}
             
-            if self.simulation_mode:
-                # In simulation mode, auto-approve payment
-                transaction_id = self.db.create_transaction(
-                    user_id, package_id, "ton", amount
-                )
-                
-                # Simulate payment verification delay
-                await asyncio.sleep(3)
-                
-                # Auto-complete transaction in simulation
-                self.db.complete_transaction(transaction_id, f"sim_ton_{transaction_id}")
-                
-                # Add credits to user
-                self.db.add_message_credits(
-                    user_id, 
-                    package['text_count'], 
-                    package['image_count'], 
-                    package['video_count']
-                )
-                
-                ton_wallet_address = self.db.get_setting('ton_wallet_address', '')
-                return {
-                    "success": True,
-                    "transaction_id": transaction_id,
-                    "payment_url": f"https://app.tonkeeper.com/transfer/{ton_wallet_address}?amount={amount}&text=Payment_{transaction_id}",
-                    "message": "✅ Simulation TON payment completed successfully!"
-                }
-            
-            # Real TON payment
+            # Create TON payment transaction
             transaction_id = self.db.create_transaction(
                 user_id, package_id, "ton", amount
             )
             
             # Generate TON payment URL
-            payment_comment = f"Payment_{transaction_id}"
-            ton_amount = int(amount * 1000000000)  # Convert to nanoTON
-            ton_wallet_address = self.db.get_setting('ton_wallet_address', '')
+            payment_comment = f"Payment_{transaction_id}_{user_id}"
+            ton_wallet_address = self.get_ton_wallet_address()
             
-            # Choose appropriate wallet app based on network
-            if self.ton_testnet:
-                # For testnet, use Tonkeeper with testnet parameter
-                payment_url = (
-                    f"https://app.tonkeeper.com/transfer/"
-                    f"{ton_wallet_address}?"
-                    f"amount={ton_amount}&"
-                    f"text={payment_comment}&"
-                    f"testnet=true"
-                )
-                network_info = "🧪 TESTNET"
-            else:
-                # For mainnet
-                payment_url = (
-                    f"https://app.tonkeeper.com/transfer/"
-                    f"{ton_wallet_address}?"
-                    f"amount={ton_amount}&"
-                    f"text={payment_comment}"
-                )
-                network_info = "🌐 MAINNET"
+            # Convert TON to nanoTON for the payment URL (1 TON = 1,000,000,000 nanoTON)
+            ton_amount_nanotone = int(amount * 1000000000)
+            
+            # Create payment URL (TON network is detected automatically by address)
+            payment_url = (
+                f"https://app.tonkeeper.com/transfer/"
+                f"{ton_wallet_address}?"
+                f"amount={ton_amount_nanotone}&"
+                f"text={payment_comment}"
+            )
+            
+            # Network info for display
+            network_info = "🧪 TESTNET" if self.ton_testnet else "🌐 MAINNET"
             
             return {
                 "success": True,
@@ -171,10 +115,6 @@ class PaymentHandler:
     async def verify_stars_payment(self, transaction_id: int, telegram_payment_id: str) -> bool:
         """Verify Telegram Stars payment"""
         try:
-            if self.simulation_mode:
-                # In simulation mode, always verify successfully
-                return True
-            
             # In a real implementation, you would verify with Telegram's API
             # For now, we'll mark as completed when called
             self.db.complete_transaction(transaction_id, telegram_payment_id)
@@ -209,10 +149,6 @@ class PaymentHandler:
     async def verify_ton_payment(self, transaction_id: int) -> bool:
         """Verify TON payment by checking blockchain"""
         try:
-            if self.simulation_mode:
-                # In simulation mode, always verify successfully
-                return True
-            
             # Get transaction details
             conn = self.db.get_connection()
             cursor = conn.cursor()
@@ -231,8 +167,8 @@ class PaymentHandler:
             conn.close()
             
             # Verify payment using TON API
-            payment_comment = f"Payment_{transaction_id}"
-            ton_wallet_address = self.db.get_setting('ton_wallet_address', '')
+            payment_comment = f"Payment_{transaction_id}_{user_id}"
+            ton_wallet_address = self.get_ton_wallet_address()
             
             if await self._check_ton_transaction(ton_wallet_address, expected_amount, payment_comment, created_date):
                 # Payment verified, complete transaction
