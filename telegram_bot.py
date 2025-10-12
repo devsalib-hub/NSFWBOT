@@ -216,7 +216,14 @@ class TelegramBot:
 {tracking_info}
         """
         
-        await query.edit_message_text(help_text)
+        # Add back to menu button
+        keyboard = [[InlineKeyboardButton(
+            get_text('glass_menu.back_to_menu', user_lang), 
+            callback_data="back_to_menu"
+        )]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        await query.edit_message_text(help_text, reply_markup=reply_markup)
 
     async def dashboard_command_callback(self, query, context, user_lang):
         """Handle dashboard command from glass menu callback"""
@@ -430,6 +437,86 @@ class TelegramBot:
             "cmd_venicestatus": self.venice_status_command
         }
         
+        # Handle back to menu button
+        if callback_data == "back_to_menu":
+            # Recreate the glass menu inline keyboard
+            keyboard = []
+            
+            # Row 1: Dashboard & Packages
+            keyboard.append([
+                InlineKeyboardButton(
+                    f"📊 {get_text('commands.dashboard', user_lang)}", 
+                    callback_data="cmd_dashboard"
+                ),
+                InlineKeyboardButton(
+                    f"💎 {get_text('commands.packages', user_lang)}", 
+                    callback_data="cmd_packages"
+                )
+            ])
+            
+            # Row 2: Balance & Referral
+            keyboard.append([
+                InlineKeyboardButton(
+                    f"💰 {get_text('commands.balance', user_lang)}", 
+                    callback_data="cmd_balance"
+                ),
+                InlineKeyboardButton(
+                    f"👥 {get_text('commands.referral', user_lang)}", 
+                    callback_data="cmd_referral"
+                )
+            ])
+            
+            # Row 3: Help & Language
+            keyboard.append([
+                InlineKeyboardButton(
+                    f"ℹ️ {get_text('commands.help', user_lang)}", 
+                    callback_data="cmd_help"
+                ),
+                InlineKeyboardButton(
+                    f"🌐 {get_text('commands.language', user_lang)}", 
+                    callback_data="cmd_language"
+                )
+            ])
+            
+            # Row 4: Start & Enter Referral
+            keyboard.append([
+                InlineKeyboardButton(
+                    f"🚀 {get_text('commands.start', user_lang)}", 
+                    callback_data="cmd_start"
+                ),
+                InlineKeyboardButton(
+                    f"🔗 {get_text('commands.enterreferral', user_lang)}", 
+                    callback_data="cmd_enterreferral"
+                )
+            ])
+            
+            # Row 5: Admin commands (only for admins)
+            admin_chat_id = self.db.get_setting('admin_chat_id', '0')
+            try:
+                admin_id = int(admin_chat_id) if admin_chat_id else 0
+            except ValueError:
+                admin_id = 0
+                
+            if query.from_user.id == admin_id and admin_id != 0:
+                keyboard.append([
+                    InlineKeyboardButton(
+                        f"🧪 {get_text('commands.testapi', user_lang)}", 
+                        callback_data="cmd_testapi"
+                    ),
+                    InlineKeyboardButton(
+                        "📊 Venice Status", 
+                        callback_data="cmd_venicestatus"
+                    )
+                ])
+            
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            menu_title = get_text('glass_menu.title', user_lang)
+            menu_subtitle = get_text('glass_menu.subtitle', user_lang)
+            message_text = f"{menu_title}\n{menu_subtitle}"
+            
+            await query.edit_message_text(message_text, reply_markup=reply_markup)
+            return
+        
         if callback_data in command_map:
             try:
                 # For glass menu callbacks, we'll handle them differently
@@ -461,10 +548,13 @@ class TelegramBot:
                         message=query.message
                     )
                     await command_map[callback_data](fake_update, context)
+                    
+                    # Edit the original message to show command was executed
+                    success_msg = get_text('glass_menu.command_executed', user_lang)
+                    await query.edit_message_text(f"✅ {success_msg}")
                 
-                # Edit the original message to show command was executed
-                success_msg = get_text('glass_menu.command_executed', user_lang)
-                await query.edit_message_text(f"✅ {success_msg}")
+                # Note: start and help commands handle their own message editing
+                # so we don't show "command executed" for them
                 
             except Exception as e:
                 error_msg = get_text('errors.command_error', user_lang, error=str(e))
@@ -1056,7 +1146,7 @@ Example: `/enterreferral ABC12345`
             return
         
         # Handle menu command callbacks
-        if data.startswith("cmd_"):
+        if data.startswith("cmd_") or data == "back_to_menu":
             await self.handle_menu_callback(update, context)
             return
         
