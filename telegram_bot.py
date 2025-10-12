@@ -340,11 +340,11 @@ class TelegramBot:
         # Row 1: Dashboard & Packages
         keyboard.append([
             InlineKeyboardButton(
-                f"📊 {get_text('commands.dashboard', user_lang)}", 
+                get_text('commands.dashboard', user_lang), 
                 callback_data="cmd_dashboard"
             ),
             InlineKeyboardButton(
-                f"💎 {get_text('commands.packages', user_lang)}", 
+                get_text('commands.packages', user_lang), 
                 callback_data="cmd_packages"
             )
         ])
@@ -352,11 +352,11 @@ class TelegramBot:
         # Row 2: Balance & Referral
         keyboard.append([
             InlineKeyboardButton(
-                f"💰 {get_text('commands.balance', user_lang)}", 
+                get_text('commands.balance', user_lang), 
                 callback_data="cmd_balance"
             ),
             InlineKeyboardButton(
-                f"👥 {get_text('commands.referral', user_lang)}", 
+                get_text('commands.referral', user_lang), 
                 callback_data="cmd_referral"
             )
         ])
@@ -364,11 +364,11 @@ class TelegramBot:
         # Row 3: Help & Language
         keyboard.append([
             InlineKeyboardButton(
-                f"ℹ️ {get_text('commands.help', user_lang)}", 
+                get_text('commands.help', user_lang), 
                 callback_data="cmd_help"
             ),
             InlineKeyboardButton(
-                f"🌐 {get_text('commands.language', user_lang)}", 
+                get_text('commands.language', user_lang), 
                 callback_data="cmd_language"
             )
         ])
@@ -376,11 +376,11 @@ class TelegramBot:
         # Row 4: Start & Enter Referral
         keyboard.append([
             InlineKeyboardButton(
-                f"🚀 {get_text('commands.start', user_lang)}", 
+                get_text('commands.start', user_lang), 
                 callback_data="cmd_start"
             ),
             InlineKeyboardButton(
-                f"🔗 {get_text('commands.enterreferral', user_lang)}", 
+                get_text('commands.enterreferral', user_lang), 
                 callback_data="cmd_enterreferral"
             )
         ])
@@ -395,7 +395,7 @@ class TelegramBot:
         if chat_id == admin_id and admin_id != 0:
             keyboard.append([
                 InlineKeyboardButton(
-                    f"🧪 {get_text('commands.testapi', user_lang)}", 
+                    get_text('commands.testapi', user_lang), 
                     callback_data="cmd_testapi"
                 ),
                 InlineKeyboardButton(
@@ -445,11 +445,11 @@ class TelegramBot:
             # Row 1: Dashboard & Packages
             keyboard.append([
                 InlineKeyboardButton(
-                    f"📊 {get_text('commands.dashboard', user_lang)}", 
+                    get_text('commands.dashboard', user_lang), 
                     callback_data="cmd_dashboard"
                 ),
                 InlineKeyboardButton(
-                    f"💎 {get_text('commands.packages', user_lang)}", 
+                    get_text('commands.packages', user_lang), 
                     callback_data="cmd_packages"
                 )
             ])
@@ -457,11 +457,11 @@ class TelegramBot:
             # Row 2: Balance & Referral
             keyboard.append([
                 InlineKeyboardButton(
-                    f"💰 {get_text('commands.balance', user_lang)}", 
+                    get_text('commands.balance', user_lang), 
                     callback_data="cmd_balance"
                 ),
                 InlineKeyboardButton(
-                    f"👥 {get_text('commands.referral', user_lang)}", 
+                    get_text('commands.referral', user_lang), 
                     callback_data="cmd_referral"
                 )
             ])
@@ -469,11 +469,11 @@ class TelegramBot:
             # Row 3: Help & Language
             keyboard.append([
                 InlineKeyboardButton(
-                    f"ℹ️ {get_text('commands.help', user_lang)}", 
+                    get_text('commands.help', user_lang), 
                     callback_data="cmd_help"
                 ),
                 InlineKeyboardButton(
-                    f"🌐 {get_text('commands.language', user_lang)}", 
+                    get_text('commands.language', user_lang), 
                     callback_data="cmd_language"
                 )
             ])
@@ -481,11 +481,11 @@ class TelegramBot:
             # Row 4: Start & Enter Referral
             keyboard.append([
                 InlineKeyboardButton(
-                    f"🚀 {get_text('commands.start', user_lang)}", 
+                    get_text('commands.start', user_lang), 
                     callback_data="cmd_start"
                 ),
                 InlineKeyboardButton(
-                    f"🔗 {get_text('commands.enterreferral', user_lang)}", 
+                    get_text('commands.enterreferral', user_lang), 
                     callback_data="cmd_enterreferral"
                 )
             ])
@@ -500,7 +500,7 @@ class TelegramBot:
             if query.from_user.id == admin_id and admin_id != 0:
                 keyboard.append([
                     InlineKeyboardButton(
-                        f"🧪 {get_text('commands.testapi', user_lang)}", 
+                        get_text('commands.testapi', user_lang), 
                         callback_data="cmd_testapi"
                     ),
                     InlineKeyboardButton(
