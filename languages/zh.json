@@ -1,0 +1,97 @@
+{
+    "commands": {
+        "start": "🚀 启动机器人",
+        "help": "ℹ️ 显示帮助信息",
+        "dashboard": "📊 查看使用统计",
+        "packages": "💎 查看可用套餐",
+        "balance": "💰 查看剩余积分",
+        "referral": "👥 获取推荐链接和统计",
+        "enterreferral": "🔗 手动输入推荐码",
+        "reset": "🔄 重置对话记录",
+        "testapi": "🧪 测试AI API连接（仅限管理员）",
+        "language": "🌐 更改语言"
+    },
+    "welcome": {
+        "title": "🤖 欢迎使用AI机器人，{first_name}！",
+        "referral_bonus": "🎉 **推荐奖励已生效！**\n您和您的朋友都获得了：\n📝 +{text_reward} 条文本消息\n🖼️ +{image_reward} 次图片生成\n🎥 +{video_reward} 次视频生成\n",
+        "features": "我可以帮助您：\n📝 文本对话\n🖼️ 图片分析\n🎥 视频回复",
+        "free_messages": "🎁 新用户免费消息：\n📝 文本：{free_text} 条消息\n🖼️ 图片：{free_image} 次生成\n🎥 视频：{free_video} 次生成",
+        "after_free": "使用完免费消息后，您需要购买套餐才能继续使用。",
+        "commands_info": "使用 /packages 查看可用套餐\n使用 /dashboard 检查您的使用情况\n使用 /referral 获取您的推荐链接\n使用 /help 查看更多命令"
+    },
+    "help": {
+        "title": "🆘 机器人命令：",
+        "menu_tip": "🍔 **使用文本输入旁的菜单按钮**快速访问所有命令！",
+        "message_types": "💬 消息类型：\n- 发送文本进行AI对话\n- 发送图片进行AI分析\n- 发送视频获得AI回复",
+        "payment_methods": "💳 支付方式：\n- Telegram 星星 ⭐\n- TON 币 💎",
+        "referral_info": "👥 推荐系统：\n- 分享您的推荐链接赚取免费消息\n- 当朋友加入时，您和朋友都能获得奖励！",
+        "tracking_info": "📊 所有消息类型都会被跟踪使用情况"
+    },
+    "language": {
+        "select": "🌐 请选择您的语言：",
+        "changed": "✅ 语言已更改为 {language}",
+        "invalid": "❌ 无效的语言选择",
+        "current": "您当前的语言是：{language}"
+    },
+    "errors": {
+        "admin_only": "❌ 此命令仅对管理员可用。",
+        "admin_not_set": "❌ 此命令仅对管理员可用。请在管理面板中设置您的Telegram用户ID。",
+        "api_test_failed": "❌ AI API测试失败！请在管理面板中检查您的API配置。",
+        "api_test_error": "❌ API测试错误：{error}",
+        "venice_status_error": "❌ 检查Venice状态错误：{error}",
+        "reset_error": "❌ 重置对话错误：{error}",
+        "insufficient_credits": "❌ 此操作积分不足。",
+        "payment_error": "❌ 支付处理错误：{error}",
+        "database_error": "❌ 发生数据库错误。请重试。"
+    },
+    "success": {
+        "api_test_passed": "✅ AI API测试成功！连接正常工作。",
+        "conversation_reset": "✅ 您的对话记录已清除！",
+        "payment_successful": "✅ 支付成功！您的积分已添加。",
+        "referral_applied": "✅ 推荐码应用成功！"
+    },
+    "status": {
+        "testing_api": "🧪 正在测试AI API连接...",
+        "checking_venice": "📊 正在检查Venice API状态...",
+        "processing": "🔄 正在处理您的请求...",
+        "generating": "🎨 正在生成回复..."
+    },
+    "dashboard": {
+        "title": "📊 您的仪表板",
+        "credits": "💰 剩余积分：",
+        "text_messages": "📝 文本：{count}",
+        "image_generations": "🖼️ 图片：{count}",
+        "video_generations": "🎥 视频：{count}",
+        "usage_today": "📈 今日使用：",
+        "total_usage": "📊 总使用量：",
+        "member_since": "👤 注册时间：{date}",
+        "referrals": "👥 推荐：{count}"
+    },
+    "packages": {
+        "title": "💎 可用套餐",
+        "no_packages": "目前没有可用套餐。",
+        "buy_button": "💳 立即购买",
+        "price": "价格：{price}",
+        "includes": "包含：",
+        "text_messages": "📝 {count} 条文本消息",
+        "image_generations": "🖼️ {count} 次图片生成",
+        "video_generations": "🎥 {count} 次视频生成"
+    },
+    "referral": {
+        "title": "👥 推荐系统",
+        "your_code": "🔗 您的推荐码：`{code}`",
+        "your_link": "📎 您的推荐链接：\n{link}",
+        "stats": "📊 您的推荐统计：\n👥 总推荐数：{count}\n💰 获得奖励：{rewards}",
+        "how_it_works": "📋 工作原理：\n1. 与朋友分享您的推荐链接\n2. 当他们使用您的链接加入时，你们都会获得奖励\n3. 奖励会自动添加到您的账户",
+        "rewards_info": "🎁 每次推荐奖励：\n📝 +{text} 条文本消息\n🖼️ +{image} 次图片生成\n🎥 +{video} 次视频生成"
+    },
+    "payment": {
+        "select_method": "💳 选择支付方式：",
+        "telegram_stars": "⭐ Telegram 星星",
+        "ton_coin": "💎 TON 币",
+        "processing": "🔄 正在处理支付...",
+        "success": "✅ 支付成功！",
+        "failed": "❌ 支付失败。请重试。",
+        "cancelled": "❌ 支付已取消。"
+    }
+}

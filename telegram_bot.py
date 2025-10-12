@@ -18,6 +18,7 @@ from database import Database
 from ai_handler import OpenRouterAPI
 from payment_handler import PaymentHandler
 from config import Config
+from translations import get_text, get_user_language, set_user_language, translation_manager
 
 # Configure logging
 logging.basicConfig(
@@ -37,6 +38,9 @@ class TelegramBot:
         """Handle /start command"""
         user = update.effective_user
         chat_id = update.effective_chat.id
+        
+        # Get user's language preference
+        user_lang = get_user_language(user.id, self.db)
         
         # Check if this is a new user
         existing_user = self.db.get_user(user.id)
@@ -65,79 +69,141 @@ class TelegramBot:
                         image_reward = int(settings.get('referral_image_reward', 1))
                         video_reward = int(settings.get('referral_video_reward', 1))
                         
-                        referral_bonus_message = f"""
-🎉 **Referral Bonus Applied!**
-You and your friend both received:
-📝 +{text_reward} text messages
-🖼️ +{image_reward} image generations
-🎥 +{video_reward} video generations
-
-"""
+                        referral_bonus_message = get_text('welcome.referral_bonus', user_lang,
+                                                        text_reward=text_reward,
+                                                        image_reward=image_reward,
+                                                        video_reward=video_reward)
         
         # Get free message settings from database
         free_settings = self.db.get_free_message_settings()
         
+        # Build welcome message using translations
+        welcome_title = get_text('welcome.title', user_lang, first_name=user.first_name)
+        features = get_text('welcome.features', user_lang)
+        free_messages = get_text('welcome.free_messages', user_lang,
+                               free_text=free_settings['free_text_messages'],
+                               free_image=free_settings['free_image_messages'],
+                               free_video=free_settings['free_video_messages'])
+        after_free = get_text('welcome.after_free', user_lang)
+        commands_info = get_text('welcome.commands_info', user_lang)
+        
         welcome_message = f"""
-🤖 Welcome to the AI Bot, {user.first_name}!
+{welcome_title}
 
-{referral_bonus_message}I can help you with:
-📝 Text conversations
-🖼️ Image analysis
-🎥 Video responses
+{referral_bonus_message}{features}
 
-🎁 Free Messages for new users:
-📝 Text: {free_settings['free_text_messages']} messages
-🖼️ Images: {free_settings['free_image_messages']} generations
-🎥 Videos: {free_settings['free_video_messages']} generations
+{free_messages}
 
-After using your free messages, you'll need to purchase a package to continue.
+{after_free}
 
-Use /packages to see available packages
-Use /dashboard to check your usage
-Use /referral to get your referral link
-Use /help for more commands
+{commands_info}
         """
         
         await update.message.reply_text(welcome_message)
     
     async def help_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle /help command"""
-        help_text = """
-🆘 Bot Commands:
+        user_lang = get_user_language(update.effective_user.id, self.db)
+        
+        help_title = get_text('help.title', user_lang)
+        menu_tip = get_text('help.menu_tip', user_lang)
+        
+        # Build command list with translations
+        commands_text = "\n".join([
+            f"/start - {get_text('commands.start', user_lang)}",
+            f"/help - {get_text('commands.help', user_lang)}",
+            f"/dashboard - {get_text('commands.dashboard', user_lang)}",
+            f"/packages - {get_text('commands.packages', user_lang)}",
+            f"/balance - {get_text('commands.balance', user_lang)}",
+            f"/referral - {get_text('commands.referral', user_lang)}",
+            f"/enterreferral - {get_text('commands.enterreferral', user_lang)}",
+            f"/reset - {get_text('commands.reset', user_lang)}",
+            f"/language - {get_text('commands.language', user_lang)}",
+            f"/testapi - {get_text('commands.testapi', user_lang)}"
+        ])
+        
+        message_types = get_text('help.message_types', user_lang)
+        payment_methods = get_text('help.payment_methods', user_lang)
+        referral_info = get_text('help.referral_info', user_lang)
+        tracking_info = get_text('help.tracking_info', user_lang)
+        
+        help_text = f"""
+{help_title}
 
-🍔 **Use the Menu Button** next to the text input for quick access to all commands!
+{menu_tip}
 
-/start - 🚀 Start the bot
-/help - ℹ️ Show this help message  
-/dashboard - 📊 Check your usage stats
-/packages - 💎 View available packages
-/balance - 💰 Check your remaining credits
-/referral - 👥 Get your referral link and stats
-/enterreferral - � Enter a referral code manually
-/reset - �🔄 Reset conversation history
-/testapi - 🧪 Test AI API connection (Admin only)
+{commands_text}
 
-💬 Message Types:
-- Send text for AI conversation
-- Send images for AI analysis  
-- Send videos for AI response
+{message_types}
 
-💳 Payment Methods:
-- Telegram Stars ⭐
-- TON Coin 💎
+{payment_methods}
 
-👥 Referral System:
-- Share your referral link to earn free messages
-- Both you and your friend get rewards when they join!
+{referral_info}
 
-📊 All message types are tracked for usage
+{tracking_info}
         """
         
         await update.message.reply_text(help_text)
     
+    async def language_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle /language command - Show language selection"""
+        user_lang = get_user_language(update.effective_user.id, self.db)
+        
+        # Create inline keyboard for language selection
+        keyboard = []
+        languages = translation_manager.get_available_languages()
+        
+        # Create 2 columns of language buttons
+        lang_items = list(languages.items())
+        for i in range(0, len(lang_items), 2):
+            row = []
+            for j in range(2):
+                if i + j < len(lang_items):
+                    code, name = lang_items[i + j]
+                    row.append(InlineKeyboardButton(
+                        text=f"{'✅ ' if code == user_lang else ''}{name}",
+                        callback_data=f"set_lang_{code}"
+                    ))
+            keyboard.append(row)
+        
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        select_text = get_text('language.select', user_lang)
+        current_lang = translation_manager.get_language_name(user_lang)
+        current_text = get_text('language.current', user_lang, language=current_lang)
+        
+        message = f"{select_text}\n\n{current_text}"
+        
+        await update.message.reply_text(message, reply_markup=reply_markup)
+    
+    async def handle_language_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle language selection callback"""
+        query = update.callback_query
+        await query.answer()
+        
+        user_id = query.from_user.id
+        callback_data = query.data
+        
+        if callback_data.startswith("set_lang_"):
+            lang_code = callback_data.replace("set_lang_", "")
+            
+            if translation_manager.is_supported_language(lang_code):
+                # Update user's language preference
+                self.db.set_user_language(user_id, lang_code)
+                
+                # Get language name for confirmation
+                lang_name = translation_manager.get_language_name(lang_code)
+                success_msg = get_text('language.changed', lang_code, language=lang_name)
+                
+                await query.edit_message_text(success_msg)
+            else:
+                error_msg = get_text('language.invalid', lang_code)
+                await query.edit_message_text(error_msg)
+    
     async def test_api_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle /testapi command - Test AI API connection"""
         user_id = update.effective_user.id
+        user_lang = get_user_language(user_id, self.db)
         
         # Check if user is admin
         admin_chat_id = self.db.get_setting('admin_chat_id', '0')
@@ -147,22 +213,27 @@ Use /help for more commands
             admin_id = 0
             
         if user_id != admin_id or admin_id == 0:
-            await update.message.reply_text("❌ This command is only available for administrators. Please set your Telegram User ID in the admin dashboard.")
+            error_msg = get_text('errors.admin_not_set', user_lang)
+            await update.message.reply_text(error_msg)
             return
         
-        await update.message.reply_text("🧪 Testing AI API connection...")
+        testing_msg = get_text('status.testing_api', user_lang)
+        await update.message.reply_text(testing_msg)
         
         try:
             # Test the API
             is_working = await self.ai_handler.test_api_connection()
             
             if is_working:
-                await update.message.reply_text("✅ AI API test successful! The connection is working properly.")
+                success_msg = get_text('success.api_test_passed', user_lang)
+                await update.message.reply_text(success_msg)
             else:
-                await update.message.reply_text("❌ AI API test failed! Please check your API configuration in the admin dashboard.")
+                error_msg = get_text('errors.api_test_failed', user_lang)
+                await update.message.reply_text(error_msg)
                 
         except Exception as e:
-            await update.message.reply_text(f"❌ Error testing API: {str(e)}")
+            error_msg = get_text('errors.api_test_error', user_lang, error=str(e))
+            await update.message.reply_text(error_msg)
     
     async def venice_status_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle /venicestatus command - Check Venice API status and account balance"""
@@ -195,23 +266,18 @@ Use /help for more commands
         """Handle /reset command - clear conversation history"""
         try:
             user_id = update.effective_user.id
+            user_lang = get_user_language(user_id, self.db)
             
             # Clear conversation history for this user
             self.db.clear_conversation_history(user_id)
             
-            reset_message = """
-🔄 **Conversation Reset Complete!**
-
-Your conversation history has been cleared. The AI will start fresh with no memory of previous messages.
-
-You can now start a new conversation from scratch! 🚀
-            """
-            
-            await update.message.reply_text(reset_message, parse_mode='Markdown')
+            success_msg = get_text('success.conversation_reset', user_lang)
+            await update.message.reply_text(success_msg)
             
         except Exception as e:
-            print(f"Error in reset command: {str(e)}")
-            await update.message.reply_text("Sorry, there was an error resetting your conversation. Please try again later.")
+            user_lang = get_user_language(update.effective_user.id, self.db)
+            error_msg = get_text('errors.reset_error', user_lang, error=str(e))
+            await update.message.reply_text(error_msg)
     
     async def packages_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Show available packages"""
@@ -675,6 +741,11 @@ Example: `/enterreferral ABC12345`
         data = query.data
         user_id = update.effective_user.id
         
+        # Handle language selection
+        if data.startswith("set_lang_"):
+            await self.handle_language_callback(update, context)
+            return
+        
         if data.startswith("buy_stars_"):
             package_id = int(data.split("_")[2])
             await self.handle_stars_purchase(query, package_id)
@@ -1003,6 +1074,7 @@ Example: `/enterreferral ABC12345`
             commands = [
                 BotCommand("start", "🚀 Start the bot and get welcome message"),
                 BotCommand("help", "ℹ️ Show available commands and help"),
+                BotCommand("language", "🌐 Change your language"),
                 BotCommand("dashboard", "📊 View your usage dashboard"),
                 BotCommand("packages", "💎 Browse message packages"),
                 BotCommand("balance", "💰 Check your message balance"),
@@ -1032,6 +1104,7 @@ Example: `/enterreferral ABC12345`
             # Add handlers
             self.app.add_handler(CommandHandler("start", self.start_command))
             self.app.add_handler(CommandHandler("help", self.help_command))
+            self.app.add_handler(CommandHandler("language", self.language_command))
             self.app.add_handler(CommandHandler("reset", self.reset_command))
             self.app.add_handler(CommandHandler("testapi", self.test_api_command))
             self.app.add_handler(CommandHandler("venicestatus", self.venice_status_command))

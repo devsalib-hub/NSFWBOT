@@ -1,0 +1,97 @@
+{
+    "commands": {
+        "start": "🚀 Iniciar el bot",
+        "help": "ℹ️ Mostrar mensaje de ayuda",
+        "dashboard": "📊 Verificar estadísticas de uso",
+        "packages": "💎 Ver paquetes disponibles",
+        "balance": "💰 Verificar créditos restantes",
+        "referral": "👥 Obtener enlace de referido y estadísticas",
+        "enterreferral": "🔗 Ingresar código de referido manualmente",
+        "reset": "🔄 Restablecer historial de conversación",
+        "testapi": "🧪 Probar conexión API de IA (Solo Admin)",
+        "language": "🌐 Cambiar idioma"
+    },
+    "welcome": {
+        "title": "🤖 ¡Bienvenido al Bot de IA, {first_name}!",
+        "referral_bonus": "🎉 **¡Bono de Referido Aplicado!**\nTú y tu amigo recibieron:\n📝 +{text_reward} mensajes de texto\n🖼️ +{image_reward} generaciones de imagen\n🎥 +{video_reward} generaciones de video\n",
+        "features": "Puedo ayudarte con:\n📝 Conversaciones de texto\n🖼️ Análisis de imágenes\n🎥 Respuestas de video",
+        "free_messages": "🎁 Mensajes gratuitos para nuevos usuarios:\n📝 Texto: {free_text} mensajes\n🖼️ Imágenes: {free_image} generaciones\n🎥 Videos: {free_video} generaciones",
+        "after_free": "Después de usar tus mensajes gratuitos, necesitarás comprar un paquete para continuar.",
+        "commands_info": "Usa /packages para ver paquetes disponibles\nUsa /dashboard para verificar tu uso\nUsa /referral para obtener tu enlace de referido\nUsa /help para más comandos"
+    },
+    "help": {
+        "title": "🆘 Comandos del Bot:",
+        "menu_tip": "🍔 **¡Usa el Botón de Menú** junto a la entrada de texto para acceso rápido a todos los comandos!",
+        "message_types": "💬 Tipos de Mensaje:\n- Envía texto para conversación con IA\n- Envía imágenes para análisis de IA\n- Envía videos para respuesta de IA",
+        "payment_methods": "💳 Métodos de Pago:\n- Estrellas de Telegram ⭐\n- TON Coin 💎",
+        "referral_info": "👥 Sistema de Referidos:\n- Comparte tu enlace de referido para ganar mensajes gratuitos\n- ¡Tanto tú como tu amigo obtienen recompensas cuando se une!",
+        "tracking_info": "📊 Todos los tipos de mensajes son rastreados para uso"
+    },
+    "language": {
+        "select": "🌐 Por favor selecciona tu idioma:",
+        "changed": "✅ Idioma cambiado a {language}",
+        "invalid": "❌ Selección de idioma inválida",
+        "current": "Tu idioma actual es: {language}"
+    },
+    "errors": {
+        "admin_only": "❌ Este comando solo está disponible para administradores.",
+        "admin_not_set": "❌ Este comando solo está disponible para administradores. Por favor establece tu ID de Telegram en el panel de administración.",
+        "api_test_failed": "❌ ¡Prueba de API de IA falló! Por favor verifica tu configuración de API en el panel de administración.",
+        "api_test_error": "❌ Error probando API: {error}",
+        "venice_status_error": "❌ Error verificando estado de Venice: {error}",
+        "reset_error": "❌ Error restableciendo conversación: {error}",
+        "insufficient_credits": "❌ Créditos insuficientes para esta operación.",
+        "payment_error": "❌ Error procesando pago: {error}",
+        "database_error": "❌ Ocurrió un error de base de datos. Por favor intenta nuevamente."
+    },
+    "success": {
+        "api_test_passed": "✅ ¡Prueba de API de IA exitosa! La conexión funciona correctamente.",
+        "conversation_reset": "✅ ¡Tu historial de conversación ha sido limpiado!",
+        "payment_successful": "✅ ¡Pago exitoso! Tus créditos han sido agregados.",
+        "referral_applied": "✅ ¡Código de referido aplicado exitosamente!"
+    },
+    "status": {
+        "testing_api": "🧪 Probando conexión API de IA...",
+        "checking_venice": "📊 Verificando estado de Venice API...",
+        "processing": "🔄 Procesando tu solicitud...",
+        "generating": "🎨 Generando respuesta..."
+    },
+    "dashboard": {
+        "title": "📊 Tu Panel",
+        "credits": "💰 Créditos Restantes:",
+        "text_messages": "📝 Texto: {count}",
+        "image_generations": "🖼️ Imágenes: {count}",
+        "video_generations": "🎥 Videos: {count}",
+        "usage_today": "📈 Uso de Hoy:",
+        "total_usage": "📊 Uso Total:",
+        "member_since": "👤 Miembro desde: {date}",
+        "referrals": "👥 Referidos: {count}"
+    },
+    "packages": {
+        "title": "💎 Paquetes Disponibles",
+        "no_packages": "No hay paquetes disponibles en este momento.",
+        "buy_button": "💳 Comprar Ahora",
+        "price": "Precio: {price}",
+        "includes": "Incluye:",
+        "text_messages": "📝 {count} mensajes de texto",
+        "image_generations": "🖼️ {count} generaciones de imagen",
+        "video_generations": "🎥 {count} generaciones de video"
+    },
+    "referral": {
+        "title": "👥 Sistema de Referidos",
+        "your_code": "🔗 Tu código de referido: `{code}`",
+        "your_link": "📎 Tu enlace de referido:\n{link}",
+        "stats": "📊 Tus estadísticas de referidos:\n👥 Total referidos: {count}\n💰 Recompensas ganadas: {rewards}",
+        "how_it_works": "📋 Cómo funciona:\n1. Comparte tu enlace de referido con amigos\n2. Cuando se unan usando tu enlace, ambos obtienen recompensas\n3. Las recompensas se agregan automáticamente a tu cuenta",
+        "rewards_info": "🎁 Recompensas por referido:\n📝 +{text} mensajes de texto\n🖼️ +{image} generaciones de imagen\n🎥 +{video} generaciones de video"
+    },
+    "payment": {
+        "select_method": "💳 Selecciona método de pago:",
+        "telegram_stars": "⭐ Estrellas de Telegram",
+        "ton_coin": "💎 TON Coin",
+        "processing": "🔄 Procesando pago...",
+        "success": "✅ ¡Pago exitoso!",
+        "failed": "❌ Pago falló. Por favor intenta nuevamente.",
+        "cancelled": "❌ Pago cancelado."
+    }
+}

@@ -81,6 +81,12 @@ class Database:
         except sqlite3.OperationalError:
             pass  # Column already exists
         
+        # Add language preference column
+        try:
+            cursor.execute('ALTER TABLE users ADD COLUMN language TEXT DEFAULT "en"')
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+        
         # Packages table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS packages (
@@ -390,6 +396,25 @@ class Database:
         
         conn.close()
         return False
+    
+    def set_user_language(self, user_id: int, language: str):
+        """Set user's preferred language"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            UPDATE users SET language = ? WHERE user_id = ?
+        ''', (language, user_id))
+        
+        conn.commit()
+        conn.close()
+    
+    def get_user_language(self, user_id: int) -> str:
+        """Get user's preferred language"""
+        user = self.get_user(user_id)
+        if user and 'language' in user and user['language']:
+            return user['language']
+        return 'en'  # Default to English
     
     def add_message_credits(self, user_id: int, text_count: int = 0, 
                            image_count: int = 0, video_count: int = 0):

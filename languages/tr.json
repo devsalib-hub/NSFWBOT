@@ -1,0 +1,97 @@
+{
+    "commands": {
+        "start": "🚀 Botu başlat",
+        "help": "ℹ️ Yardım mesajını göster",
+        "dashboard": "📊 Kullanım istatistiklerinizi kontrol edin",
+        "packages": "💎 Mevcut paketleri görüntüle",
+        "balance": "💰 Kalan kredinizi kontrol edin",
+        "referral": "👥 Referans bağlantınızı ve istatistiklerinizi alın",
+        "enterreferral": "🔗 Referans kodunu manuel olarak girin",
+        "reset": "🔄 Sohbet geçmişini sıfırla",
+        "testapi": "🧪 AI API bağlantısını test et (Sadece Admin)",
+        "language": "🌐 Dili değiştir"
+    },
+    "welcome": {
+        "title": "🤖 AI Bot'a hoş geldiniz, {first_name}!",
+        "referral_bonus": "🎉 **Referans Bonusu Uygulandı!**\nSiz ve arkadaşınız ikisi de aldınız:\n📝 +{text_reward} metin mesajı\n🖼️ +{image_reward} görsel üretimi\n🎥 +{video_reward} video üretimi\n",
+        "features": "Size şunlarda yardımcı olabilirim:\n📝 Metin konuşmaları\n🖼️ Görsel analizi\n🎥 Video yanıtları",
+        "free_messages": "🎁 Yeni kullanıcılar için ücretsiz mesajlar:\n📝 Metin: {free_text} mesaj\n🖼️ Görseller: {free_image} üretim\n🎥 Videolar: {free_video} üretim",
+        "after_free": "Ücretsiz mesajlarınızı kullandıktan sonra, devam etmek için bir paket satın almanız gerekecek.",
+        "commands_info": "Mevcut paketleri görmek için /packages kullanın\nKullanımınızı kontrol etmek için /dashboard kullanın\nReferans bağlantınızı almak için /referral kullanın\nDaha fazla komut için /help kullanın"
+    },
+    "help": {
+        "title": "🆘 Bot Komutları:",
+        "menu_tip": "🍔 **Tüm komutlara hızlı erişim için metin girişinin yanındaki Menü Düğmesini kullanın!**",
+        "message_types": "💬 Mesaj Türleri:\n- AI konuşması için metin gönderin\n- AI analizi için görsel gönderin\n- AI yanıtı için video gönderin",
+        "payment_methods": "💳 Ödeme Yöntemleri:\n- Telegram Yıldızları ⭐\n- TON Coin 💎",
+        "referral_info": "👥 Referans Sistemi:\n- Ücretsiz mesajlar kazanmak için referans bağlantınızı paylaşın\n- Hem siz hem de arkadaşınız katıldığında ödüller alırsınız!",
+        "tracking_info": "📊 Tüm mesaj türleri kullanım için takip edilir"
+    },
+    "language": {
+        "select": "🌐 Lütfen dilinizi seçin:",
+        "changed": "✅ Dil {language} olarak değiştirildi",
+        "invalid": "❌ Geçersiz dil seçimi",
+        "current": "Mevcut diliniz: {language}"
+    },
+    "errors": {
+        "admin_only": "❌ Bu komut sadece yöneticiler için kullanılabilir.",
+        "admin_not_set": "❌ Bu komut sadece yöneticiler için kullanılabilir. Lütfen Telegram Kullanıcı ID'nizi admin panelinde ayarlayın.",
+        "api_test_failed": "❌ AI API testi başarısız! Lütfen admin panelindeki API yapılandırmanızı kontrol edin.",
+        "api_test_error": "❌ API testi hatası: {error}",
+        "venice_status_error": "❌ Venice durumu kontrol hatası: {error}",
+        "reset_error": "❌ Sohbet sıfırlama hatası: {error}",
+        "insufficient_credits": "❌ Bu işlem için yetersiz kredi.",
+        "payment_error": "❌ Ödeme işleme hatası: {error}",
+        "database_error": "❌ Veritabanı hatası oluştu. Lütfen tekrar deneyin."
+    },
+    "success": {
+        "api_test_passed": "✅ AI API testi başarılı! Bağlantı düzgün çalışıyor.",
+        "conversation_reset": "✅ Sohbet geçmişiniz temizlendi!",
+        "payment_successful": "✅ Ödeme başarılı! Krediniz eklendi.",
+        "referral_applied": "✅ Referans kodu başarıyla uygulandı!"
+    },
+    "status": {
+        "testing_api": "🧪 AI API bağlantısı test ediliyor...",
+        "checking_venice": "📊 Venice API durumu kontrol ediliyor...",
+        "processing": "🔄 İsteğiniz işleniyor...",
+        "generating": "🎨 Yanıt üretiliyor..."
+    },
+    "dashboard": {
+        "title": "📊 Panonuz",
+        "credits": "💰 Kalan Kredi:",
+        "text_messages": "📝 Metin: {count}",
+        "image_generations": "🖼️ Görseller: {count}",
+        "video_generations": "🎥 Videolar: {count}",
+        "usage_today": "📈 Bugünkü Kullanım:",
+        "total_usage": "📊 Toplam Kullanım:",
+        "member_since": "👤 Üye olma tarihi: {date}",
+        "referrals": "👥 Referanslar: {count}"
+    },
+    "packages": {
+        "title": "💎 Mevcut Paketler",
+        "no_packages": "Şu anda mevcut paket yok.",
+        "buy_button": "💳 Şimdi Satın Al",
+        "price": "Fiyat: {price}",
+        "includes": "İçerikler:",
+        "text_messages": "📝 {count} metin mesajı",
+        "image_generations": "🖼️ {count} görsel üretimi",
+        "video_generations": "🎥 {count} video üretimi"
+    },
+    "referral": {
+        "title": "👥 Referans Sistemi",
+        "your_code": "🔗 Referans kodunuz: `{code}`",
+        "your_link": "📎 Referans bağlantınız:\n{link}",
+        "stats": "📊 Referans istatistikleriniz:\n👥 Toplam referanslar: {count}\n💰 Kazanılan ödüller: {rewards}",
+        "how_it_works": "📋 Nasıl çalışır:\n1. Referans bağlantınızı arkadaşlarınızla paylaşın\n2. Bağlantınızı kullanarak katıldıklarında, ikiniz de ödül alırsınız\n3. Ödüller otomatik olarak hesabınıza eklenir",
+        "rewards_info": "🎁 Referans başına ödüller:\n📝 +{text} metin mesajı\n🖼️ +{image} görsel üretimi\n🎥 +{video} video üretimi"
+    },
+    "payment": {
+        "select_method": "💳 Ödeme yöntemini seçin:",
+        "telegram_stars": "⭐ Telegram Yıldızları",
+        "ton_coin": "💎 TON Coin",
+        "processing": "🔄 Ödeme işleniyor...",
+        "success": "✅ Ödeme başarılı!",
+        "failed": "❌ Ödeme başarısız. Lütfen tekrar deneyin.",
+        "cancelled": "❌ Ödeme iptal edildi."
+    }
+}

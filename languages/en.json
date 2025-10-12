@@ -1,0 +1,97 @@
+{
+    "commands": {
+        "start": "🚀 Start the bot",
+        "help": "ℹ️ Show help message",
+        "dashboard": "📊 Check your usage stats",
+        "packages": "💎 View available packages",
+        "balance": "💰 Check your remaining credits",
+        "referral": "👥 Get your referral link and stats",
+        "enterreferral": "🔗 Enter a referral code manually",
+        "reset": "🔄 Reset conversation history",
+        "testapi": "🧪 Test AI API connection (Admin only)",
+        "language": "🌐 Change language"
+    },
+    "welcome": {
+        "title": "🤖 Welcome to the AI Bot, {first_name}!",
+        "referral_bonus": "🎉 **Referral Bonus Applied!**\nYou and your friend both received:\n📝 +{text_reward} text messages\n🖼️ +{image_reward} image generations\n🎥 +{video_reward} video generations\n",
+        "features": "I can help you with:\n📝 Text conversations\n🖼️ Image analysis\n🎥 Video responses",
+        "free_messages": "🎁 Free Messages for new users:\n📝 Text: {free_text} messages\n🖼️ Images: {free_image} generations\n🎥 Videos: {free_video} generations",
+        "after_free": "After using your free messages, you'll need to purchase a package to continue.",
+        "commands_info": "Use /packages to see available packages\nUse /dashboard to check your usage\nUse /referral to get your referral link\nUse /help for more commands"
+    },
+    "help": {
+        "title": "🆘 Bot Commands:",
+        "menu_tip": "🍔 **Use the Menu Button** next to the text input for quick access to all commands!",
+        "message_types": "💬 Message Types:\n- Send text for AI conversation\n- Send images for AI analysis\n- Send videos for AI response",
+        "payment_methods": "💳 Payment Methods:\n- Telegram Stars ⭐\n- TON Coin 💎",
+        "referral_info": "👥 Referral System:\n- Share your referral link to earn free messages\n- Both you and your friend get rewards when they join!",
+        "tracking_info": "📊 All message types are tracked for usage"
+    },
+    "language": {
+        "select": "🌐 Please select your language:",
+        "changed": "✅ Language changed to {language}",
+        "invalid": "❌ Invalid language selection",
+        "current": "Your current language is: {language}"
+    },
+    "errors": {
+        "admin_only": "❌ This command is only available for administrators.",
+        "admin_not_set": "❌ This command is only available for administrators. Please set your Telegram User ID in the admin dashboard.",
+        "api_test_failed": "❌ AI API test failed! Please check your API configuration in the admin dashboard.",
+        "api_test_error": "❌ Error testing API: {error}",
+        "venice_status_error": "❌ Error checking Venice status: {error}",
+        "reset_error": "❌ Error resetting conversation: {error}",
+        "insufficient_credits": "❌ Insufficient credits for this operation.",
+        "payment_error": "❌ Payment processing error: {error}",
+        "database_error": "❌ Database error occurred. Please try again."
+    },
+    "success": {
+        "api_test_passed": "✅ AI API test successful! The connection is working properly.",
+        "conversation_reset": "✅ Your conversation history has been cleared!",
+        "payment_successful": "✅ Payment successful! Your credits have been added.",
+        "referral_applied": "✅ Referral code applied successfully!"
+    },
+    "status": {
+        "testing_api": "🧪 Testing AI API connection...",
+        "checking_venice": "📊 Checking Venice API status...",
+        "processing": "🔄 Processing your request...",
+        "generating": "🎨 Generating response..."
+    },
+    "dashboard": {
+        "title": "📊 Your Dashboard",
+        "credits": "💰 Remaining Credits:",
+        "text_messages": "📝 Text: {count}",
+        "image_generations": "🖼️ Images: {count}",
+        "video_generations": "🎥 Videos: {count}",
+        "usage_today": "📈 Today's Usage:",
+        "total_usage": "📊 Total Usage:",
+        "member_since": "👤 Member since: {date}",
+        "referrals": "👥 Referrals: {count}"
+    },
+    "packages": {
+        "title": "💎 Available Packages",
+        "no_packages": "No packages available at the moment.",
+        "buy_button": "💳 Buy Now",
+        "price": "Price: {price}",
+        "includes": "Includes:",
+        "text_messages": "📝 {count} text messages",
+        "image_generations": "🖼️ {count} image generations", 
+        "video_generations": "🎥 {count} video generations"
+    },
+    "referral": {
+        "title": "👥 Referral System",
+        "your_code": "🔗 Your referral code: `{code}`",
+        "your_link": "📎 Your referral link:\n{link}",
+        "stats": "📊 Your referral stats:\n👥 Total referrals: {count}\n💰 Earned rewards: {rewards}",
+        "how_it_works": "📋 How it works:\n1. Share your referral link with friends\n2. When they join using your link, both of you get rewards\n3. Rewards are added automatically to your account",
+        "rewards_info": "🎁 Rewards per referral:\n📝 +{text} text messages\n🖼️ +{image} image generations\n🎥 +{video} video generations"
+    },
+    "payment": {
+        "select_method": "💳 Select payment method:",
+        "telegram_stars": "⭐ Telegram Stars",
+        "ton_coin": "💎 TON Coin",
+        "processing": "🔄 Processing payment...",
+        "success": "✅ Payment successful!",
+        "failed": "❌ Payment failed. Please try again.",
+        "cancelled": "❌ Payment cancelled."
+    }
+}
