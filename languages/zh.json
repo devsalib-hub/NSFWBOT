@@ -11,6 +11,25 @@
         "testapi": "🧪 测试AI API连接（仅限管理员）",
         "language": "🌐 更改语言"
     },
+    "menu_descriptions": {
+        "menu": "显示交互式命令菜单",
+        "reset": "重置对话历史",
+        "start": "启动机器人并获取欢迎消息",
+        "help": "显示可用命令和帮助",
+        "dashboard": "查看使用面板和统计信息",
+        "packages": "浏览消息套餐",
+        "balance": "检查消息余额",
+        "referral": "获取推荐链接和统计",
+        "language": "更改语言偏好",
+        "testapi": "测试AI连接（仅管理员）",
+        "venicestatus": "检查Venice API状态（仅管理员）"
+    },
+    "glass_menu": {
+        "title": "🎛️ 交互式命令菜单",
+        "subtitle": "选择下面的任意选项：",
+        "command_executed": "命令执行成功！",
+        "back_to_menu": "🔙 返回菜单"
+    },
     "welcome": {
         "title": "🤖 欢迎使用AI机器人，{first_name}！",
         "referral_bonus": "🎉 **推荐奖励已生效！**\n您和您的朋友都获得了：\n📝 +{text_reward} 条文本消息\n🖼️ +{image_reward} 次图片生成\n🎥 +{video_reward} 次视频生成\n",
@@ -31,7 +50,8 @@
         "select": "🌐 请选择您的语言：",
         "changed": "✅ 语言已更改为 {language}",
         "invalid": "❌ 无效的语言选择",
-        "current": "您当前的语言是：{language}"
+        "current": "您当前的语言是：{language}",
+        "menu_limitation": "📝 注意：汉堡菜单对所有用户显示相同语言（Telegram限制）。您的消息和机器人回复将使用您选择的语言。"
     },
     "errors": {
         "admin_only": "❌ 此命令仅对管理员可用。",

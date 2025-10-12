@@ -11,6 +11,25 @@
         "testapi": "🧪 Probar conexión API de IA (Solo Admin)",
         "language": "🌐 Cambiar idioma"
     },
+    "menu_descriptions": {
+        "menu": "Mostrar menú de comandos interactivo",
+        "reset": "Restablecer historial de conversación",
+        "start": "Iniciar el bot y obtener mensaje de bienvenida",
+        "help": "Mostrar comandos disponibles y ayuda",
+        "dashboard": "Ver panel de uso y estadísticas",
+        "packages": "Explorar paquetes de mensajes",
+        "balance": "Verificar saldo de mensajes",
+        "referral": "Obtener enlace de referido y estadísticas",
+        "language": "Cambiar preferencia de idioma",
+        "testapi": "Probar conexión de IA (solo admin)",
+        "venicestatus": "Verificar estado de Venice API (solo admin)"
+    },
+    "glass_menu": {
+        "title": "🎛️ Menú de Comandos Interactivo",
+        "subtitle": "Selecciona cualquier opción a continuación:",
+        "command_executed": "¡Comando ejecutado exitosamente!",
+        "back_to_menu": "🔙 Volver al Menú"
+    },
     "welcome": {
         "title": "🤖 ¡Bienvenido al Bot de IA, {first_name}!",
         "referral_bonus": "🎉 **¡Bono de Referido Aplicado!**\nTú y tu amigo recibieron:\n📝 +{text_reward} mensajes de texto\n🖼️ +{image_reward} generaciones de imagen\n🎥 +{video_reward} generaciones de video\n",
@@ -31,7 +50,8 @@
         "select": "🌐 Por favor selecciona tu idioma:",
         "changed": "✅ Idioma cambiado a {language}",
         "invalid": "❌ Selección de idioma inválida",
-        "current": "Tu idioma actual es: {language}"
+        "current": "Tu idioma actual es: {language}",
+        "menu_limitation": "📝 Nota: El menú hamburguesa muestra el mismo idioma para todos los usuarios (limitación de Telegram). Tus mensajes y respuestas del bot estarán en tu idioma seleccionado."
     },
     "errors": {
         "admin_only": "❌ Este comando solo está disponible para administradores.",

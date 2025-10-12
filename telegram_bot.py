@@ -176,6 +176,136 @@ class TelegramBot:
         
         await update.message.reply_text(message, reply_markup=reply_markup)
     
+    async def menu_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle /menu command - Show interactive glass-style menu"""
+        user_lang = get_user_language(update.effective_user.id, self.db)
+        
+        # Create glass-style menu with emoji icons
+        keyboard = []
+        
+        # Row 1: Dashboard & Packages
+        keyboard.append([
+            InlineKeyboardButton(
+                f"📊 {get_text('commands.dashboard', user_lang)}", 
+                callback_data="cmd_dashboard"
+            ),
+            InlineKeyboardButton(
+                f"💎 {get_text('commands.packages', user_lang)}", 
+                callback_data="cmd_packages"
+            )
+        ])
+        
+        # Row 2: Balance & Referral
+        keyboard.append([
+            InlineKeyboardButton(
+                f"💰 {get_text('commands.balance', user_lang)}", 
+                callback_data="cmd_balance"
+            ),
+            InlineKeyboardButton(
+                f"👥 {get_text('commands.referral', user_lang)}", 
+                callback_data="cmd_referral"
+            )
+        ])
+        
+        # Row 3: Help & Language
+        keyboard.append([
+            InlineKeyboardButton(
+                f"ℹ️ {get_text('commands.help', user_lang)}", 
+                callback_data="cmd_help"
+            ),
+            InlineKeyboardButton(
+                f"🌐 {get_text('commands.language', user_lang)}", 
+                callback_data="cmd_language"
+            )
+        ])
+        
+        # Row 4: Start & Enter Referral
+        keyboard.append([
+            InlineKeyboardButton(
+                f"🚀 {get_text('commands.start', user_lang)}", 
+                callback_data="cmd_start"
+            ),
+            InlineKeyboardButton(
+                f"🔗 {get_text('commands.enterreferral', user_lang)}", 
+                callback_data="cmd_enterreferral"
+            )
+        ])
+        
+        # Check if user is admin for admin commands
+        admin_chat_id = self.db.get_setting('admin_chat_id', '0')
+        try:
+            admin_id = int(admin_chat_id) if admin_chat_id else 0
+        except ValueError:
+            admin_id = 0
+            
+        if update.effective_user.id == admin_id and admin_id != 0:
+            # Row 5: Admin Commands
+            keyboard.append([
+                InlineKeyboardButton(
+                    f"🧪 {get_text('commands.testapi', user_lang)}", 
+                    callback_data="cmd_testapi"
+                ),
+                InlineKeyboardButton(
+                    f"📊 Venice Status", 
+                    callback_data="cmd_venicestatus"
+                )
+            ])
+        
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        menu_title = get_text('glass_menu.title', user_lang)
+        menu_subtitle = get_text('glass_menu.subtitle', user_lang)
+        
+        message = f"{menu_title}\n{menu_subtitle}"
+        
+        await update.message.reply_text(message, reply_markup=reply_markup)
+    
+    async def handle_menu_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle menu command callbacks"""
+        query = update.callback_query
+        await query.answer()
+        
+        user_id = query.from_user.id
+        callback_data = query.data
+        user_lang = get_user_language(user_id, self.db)
+        
+        # Map callback commands to actual methods
+        command_map = {
+            "cmd_dashboard": self.dashboard_command,
+            "cmd_packages": self.packages_command,
+            "cmd_balance": self.balance_command,
+            "cmd_referral": self.referral_command,
+            "cmd_help": self.help_command,
+            "cmd_language": self.language_command,
+            "cmd_start": self.start_command,
+            "cmd_enterreferral": self.enter_referral_command,
+            "cmd_testapi": self.test_api_command,
+            "cmd_venicestatus": self.venice_status_command
+        }
+        
+        if callback_data in command_map:
+            # Create a fake update object for the command
+            # We need to convert the callback query to a message-like update
+            fake_update = Update(
+                update_id=query.message.message_id,
+                message=query.message
+            )
+            
+            try:
+                # Execute the command
+                await command_map[callback_data](fake_update, context)
+                
+                # Edit the original message to show command was executed
+                success_msg = get_text('glass_menu.command_executed', user_lang)
+                await query.edit_message_text(f"✅ {success_msg}")
+                
+            except Exception as e:
+                error_msg = get_text('errors.command_error', user_lang, error=str(e))
+                await query.edit_message_text(f"❌ {error_msg}")
+        else:
+            error_msg = get_text('errors.invalid_command', user_lang)
+            await query.edit_message_text(f"❌ {error_msg}")
+    
     async def handle_language_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle language selection callback"""
         query = update.callback_query
@@ -191,11 +321,20 @@ class TelegramBot:
                 # Update user's language preference
                 self.db.set_user_language(user_id, lang_code)
                 
+                # Note: We DON'T update the global menu here because:
+                # 1. Telegram bot menus are global (affect all users)
+                # 2. Constantly changing menu creates poor UX
+                # 3. Users should use /language command instead of menu for language switching
+                
                 # Get language name for confirmation
                 lang_name = translation_manager.get_language_name(lang_code)
                 success_msg = get_text('language.changed', lang_code, language=lang_name)
                 
-                await query.edit_message_text(success_msg)
+                # Add explanation about menu limitation
+                explanation = get_text('language.menu_limitation', lang_code)
+                full_message = f"{success_msg}\n\n{explanation}"
+                
+                await query.edit_message_text(full_message)
             else:
                 error_msg = get_text('language.invalid', lang_code)
                 await query.edit_message_text(error_msg)
@@ -746,6 +885,11 @@ Example: `/enterreferral ABC12345`
             await self.handle_language_callback(update, context)
             return
         
+        # Handle menu command callbacks
+        if data.startswith("cmd_"):
+            await self.handle_menu_callback(update, context)
+            return
+        
         if data.startswith("buy_stars_"):
             package_id = int(data.split("_")[2])
             await self.handle_stars_purchase(query, package_id)
@@ -1069,25 +1213,112 @@ Example: `/enterreferral ABC12345`
         await query.answer(ok=True)
     
     async def setup_bot_menu(self, application):
-        """Set up the bot's hamburger menu with commands"""
+        """Set up the bot's minimalist hamburger menu with only essential commands"""
         try:
+            # Use English for menu by default (most universal language)
+            # This prevents constant menu changes when users switch languages
+            menu_language = 'en'
+            
+            # Admin can override menu language via database setting
+            admin_menu_lang = self.db.get_setting('menu_language', 'en')
+            if translation_manager.is_supported_language(admin_menu_lang):
+                menu_language = admin_menu_lang
+            
+            # Minimalist menu with only 2 essential commands
             commands = [
-                BotCommand("start", "🚀 Start the bot and get welcome message"),
-                BotCommand("help", "ℹ️ Show available commands and help"),
-                BotCommand("language", "🌐 Change your language"),
-                BotCommand("dashboard", "📊 View your usage dashboard"),
-                BotCommand("packages", "💎 Browse message packages"),
-                BotCommand("balance", "💰 Check your message balance"),
-                BotCommand("reset", "🔄 Reset conversation history"),
-                BotCommand("testapi", "🧪 Test AI connection (admin only)"),
-                BotCommand("venicestatus", "📊 Check Venice API status (admin only)")
+                BotCommand("menu", get_text('menu_descriptions.menu', menu_language)),
+                BotCommand("reset", get_text('menu_descriptions.reset', menu_language))
             ]
             
             await application.bot.set_my_commands(commands)
-            logger.info(f"✅ Bot menu set up with {len(commands)} commands")
+            logger.info(f"✅ Minimalist bot menu set up with {len(commands)} commands in language: {menu_language}")
             
         except Exception as e:
             logger.error(f"❌ Failed to set up bot menu: {str(e)}")
+    
+    def get_most_common_language(self):
+        """Get the most commonly used language by users"""
+        try:
+            conn = self.db.get_connection()
+            cursor = conn.cursor()
+            
+            # Get language usage statistics
+            cursor.execute("""
+                SELECT language, COUNT(*) as count 
+                FROM users 
+                WHERE language IS NOT NULL 
+                GROUP BY language 
+                ORDER BY count DESC 
+                LIMIT 1
+            """)
+            
+            result = cursor.fetchone()
+            conn.close()
+            
+            if result and result[0]:
+                return result[0]
+            else:
+                return 'en'  # Default to English
+                
+        except Exception as e:
+            logger.error(f"Error getting most common language: {e}")
+            return 'en'
+    
+    async def set_menu_language_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Admin command to set the global menu language"""
+        user_id = update.effective_user.id
+        user_lang = get_user_language(user_id, self.db)
+        
+        # Check if user is admin
+        admin_chat_id = self.db.get_setting('admin_chat_id', '0')
+        try:
+            admin_id = int(admin_chat_id) if admin_chat_id else 0
+        except ValueError:
+            admin_id = 0
+            
+        if user_id != admin_id or admin_id == 0:
+            error_msg = get_text('errors.admin_only', user_lang)
+            await update.message.reply_text(error_msg)
+            return
+        
+        # Get language argument
+        if not context.args or len(context.args) != 1:
+            await update.message.reply_text(
+                "Usage: /setmenulang <language_code>\n"
+                "Available: en, ar, fa, tr, ru, es, zh\n"
+                "Example: /setmenulang es"
+            )
+            return
+            
+        lang_code = context.args[0].lower()
+        
+        if not translation_manager.is_supported_language(lang_code):
+            await update.message.reply_text(f"❌ Unsupported language: {lang_code}")
+            return
+        
+        # Update menu language setting
+        self.db.set_setting('menu_language', lang_code)
+        
+        # Update the menu
+        await self.update_bot_menu_for_language(lang_code)
+        
+        lang_name = translation_manager.get_language_name(lang_code)
+        await update.message.reply_text(f"✅ Bot menu language set to {lang_name} ({lang_code})")
+    
+    async def update_bot_menu_for_language(self, lang_code):
+        """Update the bot menu for a specific language"""
+        try:
+            # Minimalist menu with only 2 essential commands
+            commands = [
+                BotCommand("menu", get_text('menu_descriptions.menu', lang_code)),
+                BotCommand("reset", get_text('menu_descriptions.reset', lang_code))
+            ]
+            
+            await self.app.bot.set_my_commands(commands)
+            logger.info(f"✅ Minimalist bot menu updated for language: {lang_code}")
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to update bot menu for language {lang_code}: {str(e)}")
     
     def run(self):
         """Run the bot"""
@@ -1104,7 +1335,9 @@ Example: `/enterreferral ABC12345`
             # Add handlers
             self.app.add_handler(CommandHandler("start", self.start_command))
             self.app.add_handler(CommandHandler("help", self.help_command))
+            self.app.add_handler(CommandHandler("menu", self.menu_command))
             self.app.add_handler(CommandHandler("language", self.language_command))
+            self.app.add_handler(CommandHandler("setmenulang", self.set_menu_language_command))
             self.app.add_handler(CommandHandler("reset", self.reset_command))
             self.app.add_handler(CommandHandler("testapi", self.test_api_command))
             self.app.add_handler(CommandHandler("venicestatus", self.venice_status_command))

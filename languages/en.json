@@ -11,6 +11,25 @@
         "testapi": "🧪 Test AI API connection (Admin only)",
         "language": "🌐 Change language"
     },
+    "menu_descriptions": {
+        "menu": "Show interactive command menu",
+        "reset": "Reset conversation history",
+        "start": "Start the bot and get welcome message",
+        "help": "Show available commands and help",
+        "dashboard": "View your usage dashboard and statistics",
+        "packages": "Browse message packages",
+        "balance": "Check your message balance",
+        "referral": "Get your referral link and stats",
+        "language": "Change your language preference",
+        "testapi": "Test AI connection (admin only)",
+        "venicestatus": "Check Venice API status (admin only)"
+    },
+    "glass_menu": {
+        "title": "🎛️ Interactive Command Menu",
+        "subtitle": "Select any option below:",
+        "command_executed": "Command executed successfully!",
+        "back_to_menu": "🔙 Back to Menu"
+    },
     "welcome": {
         "title": "🤖 Welcome to the AI Bot, {first_name}!",
         "referral_bonus": "🎉 **Referral Bonus Applied!**\nYou and your friend both received:\n📝 +{text_reward} text messages\n🖼️ +{image_reward} image generations\n🎥 +{video_reward} video generations\n",
@@ -31,7 +50,8 @@
         "select": "🌐 Please select your language:",
         "changed": "✅ Language changed to {language}",
         "invalid": "❌ Invalid language selection",
-        "current": "Your current language is: {language}"
+        "current": "Your current language is: {language}",
+        "menu_limitation": "📝 Note: The hamburger menu shows the same language for all users (Telegram limitation). Your messages and bot responses will be in your selected language."
     },
     "errors": {
         "admin_only": "❌ This command is only available for administrators.",
@@ -42,7 +62,9 @@
         "reset_error": "❌ Error resetting conversation: {error}",
         "insufficient_credits": "❌ Insufficient credits for this operation.",
         "payment_error": "❌ Payment processing error: {error}",
-        "database_error": "❌ Database error occurred. Please try again."
+        "database_error": "❌ Database error occurred. Please try again.",
+        "command_error": "Error executing command: {error}",
+        "invalid_command": "Invalid command selection"
     },
     "success": {
         "api_test_passed": "✅ AI API test successful! The connection is working properly.",

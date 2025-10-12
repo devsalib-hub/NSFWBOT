@@ -11,6 +11,25 @@
         "testapi": "🧪 AI API bağlantısını test et (Sadece Admin)",
         "language": "🌐 Dili değiştir"
     },
+    "menu_descriptions": {
+        "menu": "Etkileşimli komut menüsünü göster",
+        "reset": "Sohbet geçmişini sıfırla",
+        "start": "Botu başlat ve hoş geldin mesajını al",
+        "help": "Mevcut komutları ve yardımı göster",
+        "dashboard": "Kullanım panonuzu ve istatistiklerini görüntüle",
+        "packages": "Mesaj paketlerini incele",
+        "balance": "Mesaj bakiyenizi kontrol edin",
+        "referral": "Referans bağlantınızı ve istatistiklerini alın",
+        "language": "Dil tercihinizi değiştirin",
+        "testapi": "AI bağlantısını test et (sadece admin)",
+        "venicestatus": "Venice API durumunu kontrol et (sadece admin)"
+    },
+    "glass_menu": {
+        "title": "🎛️ Etkileşimli Komut Menüsü",
+        "subtitle": "Aşağıdan herhangi bir seçeneği seçin:",
+        "command_executed": "Komut başarıyla yürütüldü!",
+        "back_to_menu": "🔙 Menüye Dön"
+    },
     "welcome": {
         "title": "🤖 AI Bot'a hoş geldiniz, {first_name}!",
         "referral_bonus": "🎉 **Referans Bonusu Uygulandı!**\nSiz ve arkadaşınız ikisi de aldınız:\n📝 +{text_reward} metin mesajı\n🖼️ +{image_reward} görsel üretimi\n🎥 +{video_reward} video üretimi\n",
@@ -31,7 +50,8 @@
         "select": "🌐 Lütfen dilinizi seçin:",
         "changed": "✅ Dil {language} olarak değiştirildi",
         "invalid": "❌ Geçersiz dil seçimi",
-        "current": "Mevcut diliniz: {language}"
+        "current": "Mevcut diliniz: {language}",
+        "menu_limitation": "📝 Not: Hamburger menü tüm kullanıcılar için aynı dili gösterir (Telegram sınırlaması). Mesajlarınız ve bot yanıtları seçtiğiniz dilde olacaktır."
     },
     "errors": {
         "admin_only": "❌ Bu komut sadece yöneticiler için kullanılabilir.",
