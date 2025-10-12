@@ -144,6 +144,152 @@ class TelegramBot:
         """
         
         await update.message.reply_text(help_text)
+
+    async def start_command_callback(self, query, context, user_lang):
+        """Handle start command from glass menu callback"""
+        user = query.from_user
+        
+        # Get free message settings from database
+        free_settings = self.db.get_free_message_settings()
+        
+        # Build welcome message using translations with correct user language
+        welcome_title = get_text('welcome.title', user_lang, first_name=user.first_name)
+        features = get_text('welcome.features', user_lang)
+        free_messages = get_text('welcome.free_messages', user_lang,
+                               free_text=free_settings['free_text_messages'],
+                               free_image=free_settings['free_image_messages'],
+                               free_video=free_settings['free_video_messages'])
+        after_free = get_text('welcome.after_free', user_lang)
+        commands_info = get_text('welcome.commands_info', user_lang)
+        
+        welcome_message = f"""
+{welcome_title}
+
+{features}
+
+{free_messages}
+
+{after_free}
+
+{commands_info}
+        """
+        
+        await query.edit_message_text(welcome_message)
+
+    async def help_command_callback(self, query, context, user_lang):
+        """Handle help command from glass menu callback"""
+        help_title = get_text('help.title', user_lang)
+        menu_tip = get_text('help.menu_tip', user_lang)
+        
+        # Build command list with translations
+        commands_text = "\n".join([
+            f"/start - {get_text('commands.start', user_lang)}",
+            f"/help - {get_text('commands.help', user_lang)}",
+            f"/dashboard - {get_text('commands.dashboard', user_lang)}",
+            f"/packages - {get_text('commands.packages', user_lang)}",
+            f"/balance - {get_text('commands.balance', user_lang)}",
+            f"/referral - {get_text('commands.referral', user_lang)}",
+            f"/enterreferral - {get_text('commands.enterreferral', user_lang)}",
+            f"/reset - {get_text('commands.reset', user_lang)}",
+            f"/language - {get_text('commands.language', user_lang)}",
+            f"/testapi - {get_text('commands.testapi', user_lang)}"
+        ])
+        
+        message_types = get_text('help.message_types', user_lang)
+        payment_methods = get_text('help.payment_methods', user_lang)
+        referral_info = get_text('help.referral_info', user_lang)
+        tracking_info = get_text('help.tracking_info', user_lang)
+        
+        help_text = f"""
+{help_title}
+
+{menu_tip}
+
+{commands_text}
+
+{message_types}
+
+{payment_methods}
+
+{referral_info}
+
+{tracking_info}
+        """
+        
+        await query.edit_message_text(help_text)
+
+    async def dashboard_command_callback(self, query, context, user_lang):
+        """Handle dashboard command from glass menu callback"""
+        # Redirect to the existing dashboard logic but with proper language
+        fake_update = type('Update', (), {
+            'effective_user': query.from_user,
+            'effective_chat': query.message.chat,
+            'message': query.message
+        })()
+        await self.dashboard_command(fake_update, context)
+
+    async def packages_command_callback(self, query, context, user_lang):
+        """Handle packages command from glass menu callback"""
+        fake_update = type('Update', (), {
+            'effective_user': query.from_user,
+            'effective_chat': query.message.chat,
+            'message': query.message
+        })()
+        await self.packages_command(fake_update, context)
+
+    async def balance_command_callback(self, query, context, user_lang):
+        """Handle balance command from glass menu callback"""
+        fake_update = type('Update', (), {
+            'effective_user': query.from_user,
+            'effective_chat': query.message.chat,
+            'message': query.message
+        })()
+        await self.balance_command(fake_update, context)
+
+    async def referral_command_callback(self, query, context, user_lang):
+        """Handle referral command from glass menu callback"""
+        fake_update = type('Update', (), {
+            'effective_user': query.from_user,
+            'effective_chat': query.message.chat,
+            'message': query.message
+        })()
+        await self.referral_command(fake_update, context)
+
+    async def language_command_callback(self, query, context, user_lang):
+        """Handle language command from glass menu callback"""
+        fake_update = type('Update', (), {
+            'effective_user': query.from_user,
+            'effective_chat': query.message.chat,
+            'message': query.message
+        })()
+        await self.language_command(fake_update, context)
+
+    async def enter_referral_command_callback(self, query, context, user_lang):
+        """Handle enter referral command from glass menu callback"""
+        fake_update = type('Update', (), {
+            'effective_user': query.from_user,
+            'effective_chat': query.message.chat,
+            'message': query.message
+        })()
+        await self.enter_referral_command(fake_update, context)
+
+    async def test_api_command_callback(self, query, context, user_lang):
+        """Handle test API command from glass menu callback"""
+        fake_update = type('Update', (), {
+            'effective_user': query.from_user,
+            'effective_chat': query.message.chat,
+            'message': query.message
+        })()
+        await self.test_api_command(fake_update, context)
+
+    async def venice_status_command_callback(self, query, context, user_lang):
+        """Handle Venice status command from glass menu callback"""
+        fake_update = type('Update', (), {
+            'effective_user': query.from_user,
+            'effective_chat': query.message.chat,
+            'message': query.message
+        })()
+        await self.venice_status_command(fake_update, context)
     
     async def language_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle /language command - Show language selection"""
@@ -285,16 +431,36 @@ class TelegramBot:
         }
         
         if callback_data in command_map:
-            # Create a fake update object for the command
-            # We need to convert the callback query to a message-like update
-            fake_update = Update(
-                update_id=query.message.message_id,
-                message=query.message
-            )
-            
             try:
-                # Execute the command
-                await command_map[callback_data](fake_update, context)
+                # For glass menu callbacks, we'll handle them differently
+                # Instead of creating fake updates, we'll call special callback versions
+                if callback_data == "cmd_start":
+                    await self.start_command_callback(query, context, user_lang)
+                elif callback_data == "cmd_help":
+                    await self.help_command_callback(query, context, user_lang)
+                elif callback_data == "cmd_dashboard":
+                    await self.dashboard_command_callback(query, context, user_lang)
+                elif callback_data == "cmd_packages":
+                    await self.packages_command_callback(query, context, user_lang)
+                elif callback_data == "cmd_balance":
+                    await self.balance_command_callback(query, context, user_lang)
+                elif callback_data == "cmd_referral":
+                    await self.referral_command_callback(query, context, user_lang)
+                elif callback_data == "cmd_language":
+                    await self.language_command_callback(query, context, user_lang)
+                elif callback_data == "cmd_enterreferral":
+                    await self.enter_referral_command_callback(query, context, user_lang)
+                elif callback_data == "cmd_testapi":
+                    await self.test_api_command_callback(query, context, user_lang)
+                elif callback_data == "cmd_venicestatus":
+                    await self.venice_status_command_callback(query, context, user_lang)
+                else:
+                    # Fallback to original method
+                    fake_update = Update(
+                        update_id=query.message.message_id,
+                        message=query.message
+                    )
+                    await command_map[callback_data](fake_update, context)
                 
                 # Edit the original message to show command was executed
                 success_msg = get_text('glass_menu.command_executed', user_lang)
