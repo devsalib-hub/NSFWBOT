@@ -254,13 +254,68 @@ class TelegramBot:
         await self.balance_command(fake_update, context)
 
     async def referral_command_callback(self, query, context, user_lang):
-        """Handle referral command from glass menu callback"""
-        fake_update = type('Update', (), {
-            'effective_user': query.from_user,
-            'effective_chat': query.message.chat,
-            'message': query.message
-        })()
-        await self.referral_command(fake_update, context)
+        """Handle referral command from glass menu callback - shows gift menu with referral options"""
+        user_id = query.from_user.id
+        user_data = self.db.get_user(user_id)
+        
+        if not user_data:
+            await query.edit_message_text("Please start the bot first with /start")
+            return
+        
+        # Check if referral system is enabled
+        settings = self.db.get_all_settings()
+        if settings.get('referral_system_enabled', 'true') != 'true':
+            await query.edit_message_text("🚫 Referral system is currently disabled.")
+            return
+        
+        # Get or generate referral code
+        referral_code = self.db.get_user_referral_code(user_id)
+        if not referral_code:
+            referral_code = self.db.generate_referral_code(user_id)
+        
+        # Get referral statistics
+        referral_stats = self.db.get_user_referrals(user_id)
+        
+        # Get reward amounts
+        text_reward = int(settings.get('referral_text_reward', 3))
+        image_reward = int(settings.get('referral_image_reward', 1))
+        video_reward = int(settings.get('referral_video_reward', 1))
+        
+        bot_username = (await context.bot.get_me()).username
+        referral_link = f"https://t.me/{bot_username}?start={referral_code}"
+        
+        # Use translations for the gift/referral text
+        title = get_text('referral.title', user_lang)
+        your_code = get_text('referral.your_code', user_lang, code=referral_code)
+        your_link = get_text('referral.your_link', user_lang, link=referral_link)
+        stats = get_text('referral.stats', user_lang, count=referral_stats['successful_referrals'], rewards="")
+        how_it_works = get_text('referral.how_it_works', user_lang)
+        rewards_info = get_text('referral.rewards_info', user_lang, text=text_reward, image=image_reward, video=video_reward)
+        
+        referral_text = f"""
+{title}
+
+{your_code}
+
+{your_link}
+
+{rewards_info}
+
+{stats}
+
+{how_it_works}
+        """
+        
+        # Create keyboard with gift options
+        keyboard = [
+            [InlineKeyboardButton("📤 Share Referral Link", url=f"https://t.me/share/url?url={referral_link}&text=Join this amazing AI bot!")],
+            [InlineKeyboardButton("📊 My Referrals", callback_data="show_referrals")],
+            [InlineKeyboardButton(get_text('commands.enterreferral', user_lang), callback_data="enter_referral_from_gift")],
+            [InlineKeyboardButton(get_text('glass_menu.back_to_menu', user_lang), callback_data="back_to_menu")]
+        ]
+        
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.edit_message_text(referral_text, reply_markup=reply_markup, parse_mode='Markdown')
 
     async def language_command_callback(self, query, context, user_lang):
         """Handle language command from glass menu callback"""
@@ -373,15 +428,11 @@ class TelegramBot:
             )
         ])
         
-        # Row 4: Start & Enter Referral
+        # Row 4: Start
         keyboard.append([
             InlineKeyboardButton(
                 get_text('commands.start', user_lang), 
                 callback_data="cmd_start"
-            ),
-            InlineKeyboardButton(
-                get_text('commands.enterreferral', user_lang), 
-                callback_data="cmd_enterreferral"
             )
         ])
         
@@ -478,15 +529,11 @@ class TelegramBot:
                 )
             ])
             
-            # Row 4: Start & Enter Referral
+            # Row 4: Start
             keyboard.append([
                 InlineKeyboardButton(
                     get_text('commands.start', user_lang), 
                     callback_data="cmd_start"
-                ),
-                InlineKeyboardButton(
-                    get_text('commands.enterreferral', user_lang), 
-                    callback_data="cmd_enterreferral"
                 )
             ])
             
@@ -535,8 +582,6 @@ class TelegramBot:
                     await self.referral_command_callback(query, context, user_lang)
                 elif callback_data == "cmd_language":
                     await self.language_command_callback(query, context, user_lang)
-                elif callback_data == "cmd_enterreferral":
-                    await self.enter_referral_command_callback(query, context, user_lang)
                 elif callback_data == "cmd_testapi":
                     await self.test_api_command_callback(query, context, user_lang)
                 elif callback_data == "cmd_venicestatus":
@@ -1255,6 +1300,17 @@ Example: `/enterreferral ABC12345`
         elif data == "back_to_referral":
             # Go back to referral main screen
             await self.referral_command(update, context)
+        
+        elif data == "enter_referral_from_gift":
+            # Handle enter referral code from gift menu
+            await query.edit_message_text(
+                "🔗 **Enter Referral Code**\n\n"
+                "Please send me the referral code you want to use.\n"
+                "The code should be sent as a regular message (not a command).\n\n"
+                "💡 *Tip: You can copy and paste the code from your friend's message.*",
+                parse_mode='Markdown'
+            )
+            # Note: The actual referral code processing happens in the text message handler
         
         elif data.startswith("check_payment_"):
             # Check payment status

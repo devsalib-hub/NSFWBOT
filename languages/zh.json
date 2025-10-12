@@ -5,7 +5,7 @@
         "dashboard": "📊 查看使用统计",
         "packages": "💎 查看可用套餐",
         "balance": "💰 查看剩余积分",
-        "referral": "👥 获取推荐链接和统计",
+        "referral": "🎁 礼品和推荐",
         "enterreferral": "🔗 手动输入推荐码",
         "reset": "🔄 重置对话记录",
         "testapi": "🧪 测试AI API连接（仅限管理员）",
