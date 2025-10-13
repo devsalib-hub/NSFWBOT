@@ -51,7 +51,8 @@
     "credits": {
         "not_enough_text": "❌ No tienes suficientes créditos de mensajes de texto!\n\nUsa /packages para comprar más créditos.",
         "not_enough_image": "❌ No tienes suficientes créditos de mensajes con imagen!\n\nUsa /packages para comprar más créditos.",
-        "not_enough_video": "❌ No tienes suficientes créditos de mensajes de video!\n\nUsa /packages para comprar más créditos."
+        "not_enough_video": "❌ No tienes suficientes créditos de mensajes de video!\n\nUsa /packages para comprar más créditos.",
+        "get_more": "¿Necesitas más acceso? Compra un paquete con /packages o invita a un amigo desde /referral para ganar bonos."
     },
     "media": {
         "default_image_caption": "¿Qué ves en esta imagen?",
@@ -152,7 +153,7 @@
         "how_it_works": "📋 Cómo funciona:\n1. Comparte tu enlace de referido con amigos\n2. Cuando se unan usando tu enlace, ambos obtienen recompensas\n3. Las recompensas se agregan automáticamente a tu cuenta",
         "rewards_info": "🎁 Recompensas por referido:\n📝 +{text} mensajes de texto\n🖼️ +{image} generaciones de imagen\n🎥 +{video} generaciones de video",
         "share_referral_link": "📤 Compartir Enlace de Referido",
-    "share_message": "¡Hola a todos! Quiero compartir algo emocionante con ustedes. Hace poco descubrí una plataforma increíble llamada Next Void. Creen en el poder de una IA sin censura ni filtros y están en una misión para derribar las barreras que suelen imponer las grandes corporaciones. Next Void ofrece acceso gratuito y sin restricciones a la IA, lo que significa que podemos explorarla y usarla de formas que antes estaban limitadas o bloqueadas. Todo se trata de darnos la libertad de innovar y crear sin ataduras. ¡Échenle un vistazo y cuéntenme qué les parece! #NextVoid #LibertadIA {referral_link}",
+        "share_message": "Hola, ¿cómo vas? Acabo de encontrar una IA sin censura llamada Next Void. Únete conmigo y pruébala aquí: {referral_link}",
         "my_referrals": "📊 Mis Referidos",
         "no_referrals_message": "👥 **Tus referidos**\n\nAún no has referido a nadie. ¡Comparte tu enlace para empezar a ganar recompensas!",
         "referrals_header": "👥 **Tus referidos** (total {count})\n\n",

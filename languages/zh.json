@@ -51,7 +51,8 @@
     "credits": {
         "not_enough_text": "❌ 你的文本消息额度不足！\n\n使用 /packages 购买更多额度。",
         "not_enough_image": "❌ 你的图片消息额度不足！\n\n使用 /packages 购买更多额度。",
-        "not_enough_video": "❌ 你的视频消息额度不足！\n\n使用 /packages 购买更多额度。"
+        "not_enough_video": "❌ 你的视频消息额度不足！\n\n使用 /packages 购买更多额度。",
+        "get_more": "需要更多额度？通过 /packages 购买套餐，或使用 /referral 邀请好友一起赚奖励。"
     },
     "media": {
         "default_image_caption": "这张图片中你看到了什么？",
@@ -152,7 +153,7 @@
         "how_it_works": "📋 工作原理：\n1. 与朋友分享您的推荐链接\n2. 当他们使用您的链接加入时，你们都会获得奖励\n3. 奖励会自动添加到您的账户",
         "rewards_info": "🎁 每次推荐奖励：\n📝 +{text} 条文本消息\n🖼️ +{image} 次图片生成\n🎥 +{video} 次视频生成",
         "share_referral_link": "📤 分享推荐链接",
-    "share_message": "大家好，我想和你们分享一件令人兴奋的事情！我最近发现了一个名为 Next Void 的出色平台。他们相信无审查、无过滤的 AI 力量，并且致力于打破大公司筑起的壁垒。Next Void 提供免费且无限制的 AI 访问，这意味着我们可以用过去受限或被封锁的方式来探索和使用 AI。这一切都是为了让我们可以毫无束缚地创新与创作。去看看吧，记得告诉我你的想法！#NextVoid #AI自由 {referral_link}",
+        "share_message": "嗨，最近怎么样？我刚发现一个无审查的 AI，叫 Next Void。一起试试吧：{referral_link}",
         "my_referrals": "📊 我的推荐",
         "no_referrals_message": "👥 **你的邀请**\n\n你还没有邀请任何人。分享链接开始赚取奖励吧！",
         "referrals_header": "👥 **你的邀请**（共 {count} 人）\n\n",

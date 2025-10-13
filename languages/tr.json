@@ -51,7 +51,8 @@
     "credits": {
         "not_enough_text": "❌ Yeterli metin mesaj krediniz yok!\n\nDaha fazla kredi almak için /packages komutunu kullanın.",
         "not_enough_image": "❌ Yeterli görsel mesaj krediniz yok!\n\nDaha fazla kredi almak için /packages komutunu kullanın.",
-        "not_enough_video": "❌ Yeterli video mesaj krediniz yok!\n\nDaha fazla kredi almak için /packages komutunu kullanın."
+        "not_enough_video": "❌ Yeterli video mesaj krediniz yok!\n\nDaha fazla kredi almak için /packages komutunu kullanın.",
+        "get_more": "Daha fazla erişim mi istiyorsun? /packages ile paket satın al ya da /referral ile arkadaşını davet edip bonus kazan."
     },
     "media": {
         "default_image_caption": "Bu görüntüde ne görüyorsun?",
@@ -152,7 +153,7 @@
         "how_it_works": "📋 Nasıl çalışır:\n1. Referans bağlantınızı arkadaşlarınızla paylaşın\n2. Bağlantınızı kullanarak katıldıklarında, ikiniz de ödül alırsınız\n3. Ödüller otomatik olarak hesabınıza eklenir",
         "rewards_info": "🎁 Referans başına ödüller:\n📝 +{text} metin mesajı\n🖼️ +{image} görsel üretimi\n🎥 +{video} video üretimi",
         "share_referral_link": "📤 Referans Bağlantısını Paylaş",
-    "share_message": "Herkese selam, sizinle heyecan verici bir şey paylaşmak istedim! Kısa süre önce Next Void adlı inanılmaz bir platform keşfettim. Sansürsüz ve filtresiz yapay zekânın gücüne inanıyorlar ve büyük şirketlerin ortaya koyduğu engelleri yıkmak için çalışıyorlar. Next Void, yapay zekâya ücretsiz ve sınırsız erişim sağlıyor; yani daha önce kısıtlanan ya da engellenen yollarla yapay zekâyı keşfedebilir ve kullanabiliriz. Tüm mesele, sınırsızca yenilik yapma ve üretme özgürlüğü. Bir göz atın ve ne düşündüğünüzü söyleyin! #NextVoid #YapayZekaÖzgürlüğü {referral_link}",
+        "share_message": "Selam, nasılsın? Sansürsüz Next Void yapay zekasını keşfettim. Gel birlikte deneyelim: {referral_link}",
         "my_referrals": "📊 Referanslarım",
         "no_referrals_message": "👥 **Referanslarınız**\n\nHenüz kimseyi referans göstermediniz. Ödül kazanmaya başlamak için referans bağlantınızı paylaşın!",
         "referrals_header": "👥 **Referanslarınız** (toplam {count})\n\n",

@@ -989,6 +989,7 @@ Use /packages to buy more credits!
         # Check if user has credits
         if not self.db.use_message_credit(user_id, 'text'):
             await update.message.reply_text(get_text('credits.not_enough_text', user_lang))
+            await update.message.reply_text(get_text('credits.get_more', user_lang))
             return
         
         # Show typing indicator
@@ -1048,6 +1049,7 @@ Use /packages to buy more credits!
         # Check if user has credits
         if not self.db.use_message_credit(user_id, 'image'):
             await update.message.reply_text(get_text('credits.not_enough_image', user_lang))
+            await update.message.reply_text(get_text('credits.get_more', user_lang))
             return
         
         # Show typing indicator
@@ -1118,6 +1120,7 @@ Use /packages to buy more credits!
         # Check if user has credits
         if not self.db.use_message_credit(user_id, 'video'):
             await update.message.reply_text(get_text('credits.not_enough_video', user_lang))
+            await update.message.reply_text(get_text('credits.get_more', user_lang))
             return
         
         # Show typing indicator

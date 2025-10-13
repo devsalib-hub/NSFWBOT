@@ -51,7 +51,8 @@
     "credits": {
         "not_enough_text": "❌ You don't have enough text message credits!\n\nUse /packages to buy more credits.",
         "not_enough_image": "❌ You don't have enough image message credits!\n\nUse /packages to buy more credits.",
-        "not_enough_video": "❌ You don't have enough video message credits!\n\nUse /packages to buy more credits."
+        "not_enough_video": "❌ You don't have enough video message credits!\n\nUse /packages to buy more credits.",
+        "get_more": "Need more access? Buy a package with /packages or invite a friend with /referral to earn bonuses."
     },
     "media": {
         "default_image_caption": "What do you see in this image?",
@@ -152,7 +153,7 @@
         "how_it_works": "📋 How it works:\n1. Share your referral link with friends\n2. When they join using your link, both of you get rewards\n3. Rewards are added automatically to your account",
         "rewards_info": "🎁 Rewards per referral:\n📝 +{text} text messages\n🖼️ +{image} image generations\n🎥 +{video} video generations",
         "share_referral_link": "📤 Share Referral Link",
-    "share_message": "Hey everyone, I wanted to share something exciting with you! I recently discovered this incredible platform called Next Void. They believe in the power of uncensored and unfiltered AI, and they're on a mission to break down the barriers that big corporations often put up. Next Void provides free and unrestricted access to AI, which means we can explore and use AI in ways that were previously limited or blocked. It's all about giving us the freedom to innovate and create without constraints. Check them out and let me know what you think! #NextVoid #AIFreedom {referral_link}",
+        "share_message": "Hey, how are you? I just found this uncensored AI called Next Void. Join me and try it out here: {referral_link}",
         "my_referrals": "📊 My Referrals",
         "no_referrals_message": "👥 **Your Referrals**\n\nYou haven't referred anyone yet. Share your referral link to start earning rewards!",
         "referrals_header": "👥 **Your Referrals** ({count} total)\n\n",
