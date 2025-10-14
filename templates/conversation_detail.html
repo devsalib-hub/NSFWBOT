@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block title %}Conversation {{ user_display_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h2 class="mb-0"><i class="fas fa-comments"></i> Conversation</h2>
+        <div class="text-muted small">
+            {{ user_display_name }}{% if username %} (@{{ username }}){% endif %} · ID: {{ user_id }}
+        </div>
+    </div>
+    <a class="btn btn-outline-secondary" href="{{ url_for('message_history') }}">
+        <i class="fas fa-arrow-left"></i> Back to History
+    </a>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <h6>Total Messages</h6>
+            <h3>{{ stats.total_messages | number_format }}</h3>
+            <small>User: {{ stats.user_messages | number_format }} · AI: {{ stats.ai_messages | number_format }}</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card green">
+            <h6>Tokens</h6>
+            <h3>{{ stats.total_tokens | number_format }}</h3>
+            <small>Prompt: {{ stats.prompt_tokens | number_format }} · Completion: {{ stats.completion_tokens | number_format }}</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card orange">
+            <h6>Total Cost</h6>
+            <h3>${{ stats.total_cost | currency }}</h3>
+            <small>Cumulative conversation cost</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card purple">
+            <h6>Showing</h6>
+            <h3>{{ start_index | number_format }} - {{ end_index | number_format }}</h3>
+            <small>Page {{ current_page }} of {{ total_pages or 1 }}</small>
+        </div>
+    </div>
+</div>
+
+{% if messages %}
+<div class="glass-card p-4">
+    <div class="conversation-thread">
+        {% for message in messages %}
+        <div class="conversation-bubble {% if message.user_message %}from-user{% else %}from-ai{% endif %}">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="fw-bold">
+                    {% if message.user_message %}
+                        <i class="fas fa-user"></i> User
+                    {% else %}
+                        <i class="fas fa-robot"></i> Next Void AI
+                    {% endif %}
+                </div>
+                <small class="text-muted">{{ message.timestamp | date_format }}</small>
+            </div>
+
+            {% if message.user_message %}
+                <div class="message-text">{{ message.user_message | safe }}</div>
+            {% endif %}
+
+            {% if message.bot_response %}
+                <div class="message-text">{{ message.bot_response | safe }}</div>
+            {% endif %}
+
+            <div class="conversation-meta text-muted small mt-3">
+                <div>Type: {{ message.message_type | title }}</div>
+                {% if message.total_tokens %}
+                <div>Tokens: {{ message.total_tokens | number_format }} (Prompt {{ message.prompt_tokens | number_format or 0 }}, Completion {{ message.completion_tokens | number_format or 0 }})</div>
+                {% endif %}
+                {% if message.cost %}
+                <div>Cost: ${{ message.cost | currency }}</div>
+                {% endif %}
+                {% if message.response_id %}
+                <div>Response ID: <code>{{ message.response_id }}</code></div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% if total_pages > 1 %}
+<nav aria-label="Conversation pagination" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('message_history_conversation', user_id=user_id, page=prev_num) }}">Previous</a>
+            </li>
+        {% endif %}
+
+        {% for page_num in range(1, total_pages + 1) %}
+            {% if page_num == current_page %}
+                <li class="page-item active">
+                    <span class="page-link">{{ page_num }}</span>
+                </li>
+            {% elif page_num <= current_page + 2 and page_num >= current_page - 2 %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('message_history_conversation', user_id=user_id, page=page_num) }}">{{ page_num }}</a>
+                </li>
+            {% elif page_num == 1 or page_num == total_pages %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('message_history_conversation', user_id=user_id, page=page_num) }}">{{ page_num }}</a>
+                </li>
+            {% elif page_num == current_page - 3 or page_num == current_page + 3 %}
+                <li class="page-item disabled"><span class="page-link">…</span></li>
+            {% endif %}
+        {% endfor %}
+
+        {% if has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('message_history_conversation', user_id=user_id, page=next_num) }}">Next</a>
+            </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="text-center py-5">
+    <i class="fas fa-comments fa-3x text-muted mb-3"></i>
+    <h5 class="text-muted">No messages yet</h5>
+    <p class="text-muted">This user has not started a conversation with the bot.</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block styles %}
+<style>
+.conversation-thread {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.conversation-bubble {
+    padding: 1.25rem;
+    border-radius: 1rem;
+    position: relative;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05);
+    background: rgba(255, 255, 255, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.conversation-bubble.from-user {
+    border-left: 4px solid #2563eb;
+}
+
+.conversation-bubble.from-ai {
+    border-left: 4px solid #22c55e;
+}
+
+.conversation-bubble::before {
+    content: "";
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background: inherit;
+    transform: rotate(45deg);
+    top: 20px;
+}
+
+.conversation-bubble.from-user::before {
+    left: -6px;
+    border-left: 1px solid rgba(255, 255, 255, 0.4);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.conversation-bubble.from-ai::before {
+    right: -6px;
+    border-right: 1px solid rgba(255, 255, 255, 0.4);
+    border-top: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.conversation-bubble.from-ai {
+    margin-left: auto;
+}
+
+.conversation-bubble.from-user {
+    margin-right: auto;
+}
+
+.message-text {
+    white-space: pre-wrap;
+    line-height: 1.6;
+}
+
+.conversation-meta {
+    border-top: 1px dashed rgba(0, 0, 0, 0.08);
+    padding-top: 0.75rem;
+}
+
+@media (max-width: 768px) {
+    .conversation-bubble {
+        padding: 1rem;
+    }
+}
+</style>
+{% endblock %}

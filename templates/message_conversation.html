@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}Conversation Details{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+    <div>
+        <h2 class="mb-1"><i class="fas fa-comments"></i> Conversation</h2>
+        <div class="text-muted small">
+            <strong>User:</strong> {{ user.first_name or user.username or 'Unknown' }}
+            {% if user.username %}<span class="ms-2">@{{ user.username }}</span>{% endif %}
+            {% if user.user_id %}<span class="ms-2">ID: {{ user.user_id }}</span>{% endif %}
+        </div>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('message_history') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to History
+        </a>
+        <a href="#focus-message" class="btn btn-outline-primary">
+            <i class="fas fa-bullseye"></i> Jump to Selected
+        </a>
+    </div>
+</div>
+
+<div class="glass-card p-4" id="focus-message">
+    {% if conversation %}
+        <div class="conversation-timeline">
+            {% for entry in conversation %}
+            <div class="conversation-item {% if entry.id == focus_message_id %}highlight{% endif %}" id="message-{{ entry.id }}">
+                <div class="conversation-meta">
+                    <span class="badge bg-light text-dark text-uppercase">{{ entry.message_type }}</span>
+                    <span class="text-muted">{{ entry.timestamp | date_format }}</span>
+                    {% if entry.id == focus_message_id %}
+                        <span class="badge bg-primary">Selected</span>
+                    {% endif %}
+                </div>
+                <div class="conversation-bubbles">
+                    <div class="bubble bubble-user">
+                        <div class="bubble-header">
+                            <i class="fas fa-user-circle"></i> {{ entry.first_name or entry.username or 'User' }}
+                        </div>
+                        <div class="bubble-body">
+                            {% if entry.message_type == 'text' %}
+                                {{ entry.user_message | safe }}
+                            {% elif entry.message_type == 'image' %}
+                                <em><i class="fas fa-image text-success"></i> Image submitted</em>
+                                {% if entry.user_message %}<div class="small text-muted mt-2">{{ entry.user_message }}</div>{% endif %}
+                            {% elif entry.message_type == 'video' %}
+                                <em><i class="fas fa-video text-warning"></i> Video submitted</em>
+                                {% if entry.user_message %}<div class="small text-muted mt-2">{{ entry.user_message }}</div>{% endif %}
+                            {% else %}
+                                {{ entry.user_message or '—' }}
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% if entry.bot_response %}
+                    <div class="bubble bubble-ai">
+                        <div class="bubble-header">
+                            <i class="fas fa-robot"></i> Next Void AI
+                        </div>
+                        <div class="bubble-body">{{ entry.bot_response | safe }}</div>
+                        {% if entry.total_tokens %}
+                        <div class="bubble-footer text-muted small">
+                            Tokens: {{ entry.total_tokens | number_format }}
+                            {% if entry.cost %} · Cost: ${{ entry.cost | precise_number }}{% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No conversation history</h5>
+            <p class="text-muted">This user has not interacted with the bot yet.</p>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.conversation-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.conversation-item {
+    border-left: 3px solid rgba(255,255,255,0.1);
+    padding-left: 1.5rem;
+    position: relative;
+}
+
+.conversation-item::before {
+    content: "";
+    position: absolute;
+    left: -1.05rem;
+    top: 0.35rem;
+    width: 0.8rem;
+    height: 0.8rem;
+    background: var(--bs-primary);
+    border-radius: 50%;
+    box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.2);
+}
+
+.conversation-item.highlight {
+    background: rgba(13, 110, 253, 0.1);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-left: -1.5rem;
+    border-left-color: transparent;
+}
+
+.conversation-item.highlight::before {
+    background: #fff;
+    border: 2px solid var(--bs-primary);
+    box-shadow: 0 0 0 6px rgba(13, 110, 253, 0.25);
+}
+
+.conversation-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.conversation-bubbles {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.bubble {
+    border-radius: 1rem;
+    padding: 1rem 1.25rem;
+    position: relative;
+}
+
+.bubble-user {
+    background: linear-gradient(135deg, rgba(13, 110, 253, 0.15), rgba(13, 110, 253, 0.05));
+    border: 1px solid rgba(13, 110, 253, 0.25);
+}
+
+.bubble-ai {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.bubble-header {
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.bubble-body {
+    white-space: pre-wrap;
+    line-height: 1.6;
+}
+
+.bubble-footer {
+    margin-top: 0.75rem;
+}
+
+@media (max-width: 768px) {
+    .conversation-item {
+        padding-left: 1rem;
+    }
+    .conversation-item::before {
+        left: -0.8rem;
+    }
+}
+</style>
+{% endblock %}

@@ -777,25 +777,6 @@ class Database:
         conn.close()
         return count
 
-    def get_users_paginated(self, page, per_page):
-        """Get users with pagination"""
-        conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
-        
-        offset = (page - 1) * per_page
-        cursor.execute('''
-            SELECT user_id, username, first_name, last_name, credits, 
-                   total_spent, created_date, last_active 
-            FROM users 
-            ORDER BY created_date DESC 
-            LIMIT ? OFFSET ?
-        ''', (per_page, offset))
-        
-        users = cursor.fetchall()
-        conn.close()
-        return users
-
     def get_transaction_count(self):
         """Get total number of transactions"""
         conn = sqlite3.connect(self.db_path)
@@ -859,21 +840,83 @@ class Database:
         return transactions
 
     def get_users_paginated(self, page, per_page):
-        """Get users with pagination"""
+        """Get users with pagination metadata."""
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
-        
+
+        cursor.execute('SELECT COUNT(*) FROM users')
+        total_users = cursor.fetchone()[0]
+
+        if total_users == 0:
+            conn.close()
+            return {
+                'items': [],
+                'total': 0,
+                'page': 1,
+                'per_page': per_page,
+                'total_pages': 0,
+                'has_prev': False,
+                'has_next': False,
+                'prev_page': None,
+                'next_page': None,
+                'start_index': 0,
+                'end_index': 0
+            }
+
+        total_pages = (total_users + per_page - 1) // per_page
+        page = max(1, min(page, total_pages))
         offset = (page - 1) * per_page
+
         cursor.execute('''
             SELECT * FROM users 
             ORDER BY registration_date DESC 
             LIMIT ? OFFSET ?
         ''', (per_page, offset))
-        
+
         users = cursor.fetchall()
         conn.close()
-        return users
+
+        start_index = offset + 1
+        end_index = min(offset + per_page, total_users)
+
+        return {
+            'items': users,
+            'total': total_users,
+            'page': page,
+            'per_page': per_page,
+            'total_pages': total_pages,
+            'has_prev': page > 1,
+            'has_next': page < total_pages,
+            'prev_page': page - 1 if page > 1 else None,
+            'next_page': page + 1 if page < total_pages else None,
+            'start_index': start_index,
+            'end_index': end_index
+        }
+
+    def get_user_conversation(self, user_id: int, limit: Optional[int] = None):
+        """Return message history for a user ordered by timestamp."""
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        query = '''
+            SELECT mh.*, u.username, u.first_name, u.last_name
+            FROM message_history mh
+            LEFT JOIN users u ON mh.user_id = u.user_id
+            WHERE mh.user_id = ?
+            ORDER BY mh.timestamp ASC
+        '''
+
+        if limit:
+            query += ' LIMIT ?'
+            cursor.execute(query, (user_id, limit))
+        else:
+            cursor.execute(query, (user_id,))
+
+        messages = cursor.fetchall()
+        conn.close()
+        return messages
 
     def get_transactions_paginated(self, page, per_page):
         """Get transactions with pagination"""

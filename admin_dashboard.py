@@ -216,8 +216,21 @@ def users():
     page = request.args.get('page', 1, type=int)
     per_page = 20
     
-    users_data = db.get_users_paginated(page, per_page)
-    return render_template('users.html', users=users_data)
+    pagination = db.get_users_paginated(page, per_page)
+    return render_template(
+        'users.html',
+        users=pagination['items'],
+        current_page=pagination['page'],
+        total_pages=pagination['total_pages'],
+        total_users=pagination['total'],
+        has_prev=pagination['has_prev'],
+        has_next=pagination['has_next'],
+        prev_num=pagination['prev_page'],
+        next_num=pagination['next_page'],
+        start_index=pagination['start_index'],
+        end_index=pagination['end_index'],
+        per_page=pagination['per_page']
+    )
 
 @app.route('/packages')
 @login_required
@@ -679,6 +692,39 @@ def send_bulk_message():
     except Exception as e:
         return jsonify({'success': False, 'error': f'Error sending bulk message: {str(e)}'})
 
+@app.route('/message_history/<int:message_id>')
+@login_required
+def message_history_detail(message_id: int):
+    """Display a single user's conversation in chat view."""
+    conn = db.get_connection()
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
+    cursor.execute('''
+        SELECT mh.*, u.username, u.first_name, u.last_name
+        FROM message_history mh
+        LEFT JOIN users u ON mh.user_id = u.user_id
+        WHERE mh.id = ?
+    ''', (message_id,))
+
+    message = cursor.fetchone()
+    conn.close()
+
+    if not message:
+        flash('Message not found.')
+        return redirect(url_for('message_history'))
+
+    user_data = db.get_user(message['user_id']) or {}
+    conversation = db.get_user_conversation(message['user_id'])
+
+    return render_template(
+        'message_conversation.html',
+        conversation=conversation,
+        focus_message_id=message_id,
+        user=user_data,
+        selected_message=message
+    )
+
 @app.route('/api/openrouter/models')
 @login_required
 def get_openrouter_models():
@@ -852,20 +898,131 @@ def message_history():
         # Get summary statistics
         summary_stats = get_message_history_stats()
         
-        return render_template('message_history.html', 
-                             messages=messages,
-                             current_page=page,
-                             total_pages=total_pages,
-                             total_messages=total_messages,
-                             has_prev=has_prev,
-                             has_next=has_next,
-                             prev_num=page-1 if has_prev else None,
-                             next_num=page+1 if has_next else None,
-                             stats=summary_stats)
+        start_index = offset + 1 if total_messages else 0
+        end_index = min(offset + per_page, total_messages)
+        return render_template(
+            'message_history.html',
+            messages=messages,
+            current_page=page,
+            total_pages=total_pages,
+            total_messages=total_messages,
+            has_prev=has_prev,
+            has_next=has_next,
+            prev_num=page - 1 if has_prev else None,
+            next_num=page + 1 if has_next else None,
+            stats=summary_stats,
+            start_index=start_index,
+            end_index=end_index,
+            per_page=per_page
+        )
         
     except Exception as e:
         flash(f'Error loading message history: {str(e)}')
         return redirect(url_for('dashboard'))
+
+
+@app.route('/message_history/conversation/<int:user_id>')
+@login_required
+def message_history_conversation(user_id: int):
+    """Conversation view for a specific user."""
+    try:
+        page = request.args.get('page', 1, type=int)
+        per_page = 20
+        offset = (page - 1) * per_page
+
+        conn = db.get_connection()
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        cursor.execute(
+            'SELECT username, first_name, last_name FROM users WHERE user_id = ?',
+            (user_id,)
+        )
+        user_row = cursor.fetchone()
+
+        cursor.execute(
+            'SELECT COUNT(*) FROM message_history WHERE user_id = ?',
+            (user_id,)
+        )
+        total_messages = cursor.fetchone()[0]
+
+        cursor.execute(
+            '''SELECT *
+               FROM message_history
+               WHERE user_id = ?
+               ORDER BY timestamp ASC
+               LIMIT ? OFFSET ?''',
+            (user_id, per_page, offset)
+        )
+        messages = cursor.fetchall()
+
+        cursor.execute(
+            '''SELECT COUNT(*) AS cnt, user_message IS NOT NULL AS is_user
+               FROM message_history
+               WHERE user_id = ?
+               GROUP BY is_user''',
+            (user_id,)
+        )
+        role_counts = {row[1]: row[0] for row in cursor.fetchall()}
+
+        cursor.execute(
+            '''SELECT SUM(prompt_tokens) AS prompt_sum,
+                      SUM(completion_tokens) AS completion_sum,
+                      SUM(total_tokens) AS total_sum,
+                      SUM(cost) AS total_cost
+               FROM message_history
+               WHERE user_id = ?''',
+            (user_id,)
+        )
+        token_stats = cursor.fetchone() or (0, 0, 0, 0)
+
+        conn.close()
+
+        total_pages = (total_messages + per_page - 1) // per_page if total_messages else 0
+        page = max(1, min(page, total_pages or 1))
+        has_prev = page > 1
+        has_next = page < (total_pages or 0)
+        start_index = offset + 1 if total_messages else 0
+        end_index = min(offset + per_page, total_messages)
+
+        conversation_stats = {
+            'total_messages': total_messages,
+            'user_messages': role_counts.get(1, 0),
+            'ai_messages': role_counts.get(0, 0),
+            'prompt_tokens': token_stats[0] or 0,
+            'completion_tokens': token_stats[1] or 0,
+            'total_tokens': token_stats[2] or 0,
+            'total_cost': token_stats[3] or 0,
+        }
+
+        user_display_name = None
+        if user_row:
+            name_parts = [part for part in (user_row['first_name'], user_row['last_name']) if part]
+            user_display_name = ' '.join(name_parts) or user_row['username'] or str(user_id)
+        else:
+            user_display_name = str(user_id)
+
+        return render_template(
+            'conversation_detail.html',
+            user_id=user_id,
+            user_display_name=user_display_name,
+            username=user_row['username'] if user_row else None,
+            messages=messages,
+            current_page=page,
+            total_pages=total_pages,
+            has_prev=has_prev,
+            has_next=has_next,
+            prev_num=page - 1 if has_prev else None,
+            next_num=page + 1 if has_next else None,
+            start_index=start_index,
+            end_index=end_index,
+            total_messages_count=total_messages,
+            stats=conversation_stats
+        )
+
+    except Exception as e:
+        flash(f'Error loading conversation history: {str(e)}')
+        return redirect(url_for('message_history'))
 
 def get_message_history_stats():
     """Get summary statistics for message history"""

@@ -53,11 +53,25 @@
 
 <!-- Message History Table -->
 <div class="card">
-    <div class="card-header">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
         <h5 class="mb-0">📝 Message History</h5>
+        {% if total_messages %}
+        <div class="text-muted small">
+            Showing {{ start_index | number_format }} - {{ end_index | number_format }} of {{ total_messages | number_format }}
+        </div>
+        {% endif %}
     </div>
     <div class="card-body">
         {% if messages %}
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <div class="text-muted small">
+                    Showing {{ start_index | number_format }} - {{ end_index | number_format }} of {{ total_messages | number_format }} messages
+                </div>
+                <div class="text-muted small">
+                    Page {{ current_page }} of {{ total_pages | number_format if total_pages else 1 }}
+                </div>
+            </div>
+
             <div class="table-responsive">
                 <table class="table table-striped">
                     <thead>
@@ -68,6 +82,7 @@
                             <th>Message</th>
                             <th>Venice Metadata</th>
                             <th>Tokens & Cost</th>
+                            <th class="text-end">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -109,6 +124,11 @@
                                                 <strong>AI:</strong> {{ message.bot_response[:80] }}{% if message.bot_response|length > 80 %}...{% endif %}
                                             </div>
                                         {% endif %}
+                                        <div class="mt-2">
+                                            <a class="btn btn-sm btn-outline-primary" href="{{ url_for('message_history_detail', message_id=message.id) }}">
+                                                <i class="fas fa-comments"></i> View Conversation
+                                            </a>
+                                        </div>
                                     </div>
                                 </td>
                                 <td>
@@ -159,6 +179,11 @@
                                         <span class="text-muted">-</span>
                                     {% endif %}
                                 </td>
+                                <td class="text-end">
+                                    <a href="{{ url_for('message_history_conversation', user_id=message.user_id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-comments"></i> View Conversation
+                                    </a>
+                                </td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -184,6 +209,12 @@
                                 <li class="page-item">
                                     <a class="page-link" href="{{ url_for('message_history', page=page_num) }}">{{ page_num }}</a>
                                 </li>
+                            {% elif page_num == 1 or page_num == total_pages %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('message_history', page=page_num) }}">{{ page_num }}</a>
+                                </li>
+                            {% elif page_num == current_page - 3 or page_num == current_page + 3 %}
+                                <li class="page-item disabled"><span class="page-link">…</span></li>
                             {% endif %}
                         {% endfor %}
                         
