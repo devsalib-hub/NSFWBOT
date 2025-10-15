@@ -423,6 +423,9 @@ def settings():
         context_window_hours = request.form.get('context_window_hours', '24')
         enable_conversation_memory = request.form.get('enable_conversation_memory', 'true')
         
+        # Activity logging settings
+        activity_logging_enabled = 'activity_logging_enabled' in request.form
+        
         # Token pricing settings
         input_token_price_per_1m = request.form.get('input_token_price_per_1m', '0.50')
         output_token_price_per_1m = request.form.get('output_token_price_per_1m', '1.50')
@@ -468,6 +471,7 @@ def settings():
             'conversation_history_length': conversation_history_length,
             'context_window_hours': context_window_hours,
             'enable_conversation_memory': enable_conversation_memory,
+            'activity_logging_enabled': str(activity_logging_enabled).lower(),
             'input_token_price_per_1m': input_token_price_per_1m,
             'output_token_price_per_1m': output_token_price_per_1m,
             'ton_price_usd': ton_price_usd,
@@ -606,12 +610,16 @@ def user_detail(user_id):
         "SELECT id FROM referrals WHERE referee_id = ?", (user_id,)
     )) > 0
     
+    # Get user activity logs
+    user_activities = db.get_user_activity_logs(user_id, limit=100)
+    
     return render_template('user_detail.html', 
                          user=user, 
                          transactions=user_transactions, 
                          usage=user_usage,
                          referral_stats=referral_stats,
-                         was_referred=was_referred)
+                         was_referred=was_referred,
+                         activities=user_activities)
 
 @app.route('/send_message/<int:user_id>', methods=['POST'])
 @login_required

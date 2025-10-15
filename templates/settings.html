@@ -318,6 +318,15 @@
                     </select>
                     <div class="form-text">Enable contextual AI responses</div>
                 </div>
+                
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="activity_logging_enabled" name="activity_logging_enabled" 
+                           {% if settings.get('activity_logging_enabled', 'false') == 'true' %}checked{% endif %}>
+                    <label class="form-check-label" for="activity_logging_enabled">
+                        Activity Logging
+                    </label>
+                    <div class="form-text">Track user interactions and actions in the database</div>
+                </div>
             </div>
         </div>
         

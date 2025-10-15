@@ -325,10 +325,25 @@ class Database:
             )
         ''')
         
-        conn.commit()
-        conn.close()
+        # User activity logs table (for tracking user interactions)
+        cursor.execute('''  
+            CREATE TABLE IF NOT EXISTS user_activity_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                activity_type TEXT NOT NULL, -- 'command', 'menu', 'button', 'callback', etc.
+                activity_data TEXT NOT NULL, -- JSON data about the activity
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
         
-        # Insert default packages
+        # Create index for faster activity log queries
+        try:
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_user_activity_logs_user_id_timestamp ON user_activity_logs(user_id, timestamp DESC)')
+        except sqlite3.OperationalError:
+            pass
+        
+        conn.commit()
+        conn.close()        # Insert default packages
         self.insert_default_packages()
         self.insert_default_settings()
     
@@ -376,7 +391,9 @@ class Database:
             ("referral_video_reward", "1"),
             # TON payment settings
             ("ton_testnet_mode", "true"),  # Start with testnet for safety
-            ("ton_api_key", "")  # Optional API key
+            ("ton_api_key", ""),  # Optional API key
+            # Activity logging settings
+            ("activity_logging_enabled", "true")  # Enable activity logging by default
         ]
         
         for key, value in default_settings:
@@ -1509,3 +1526,87 @@ class Database:
         conn.close()
         
         return result is not None
+    
+    # Activity Logging Methods
+    def log_user_activity(self, user_id: int, activity_type: str, activity_data: dict):
+        """Log user activity if activity logging is enabled"""
+        if not self.get_setting('activity_logging_enabled', 'true').lower() == 'true':
+            return  # Activity logging is disabled
+        
+        import json
+        from datetime import datetime
+        
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        # Add timestamp to activity data
+        activity_data['timestamp'] = datetime.now().isoformat()
+        
+        cursor.execute('''
+            INSERT INTO user_activity_logs (user_id, activity_type, activity_data)
+            VALUES (?, ?, ?)
+        ''', (user_id, activity_type, json.dumps(activity_data, ensure_ascii=False)))
+        
+        conn.commit()
+        conn.close()
+    
+    def get_user_activity_logs(self, user_id: int, limit: int = 100) -> list:
+        """Get user activity logs (most recent first)"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT activity_type, activity_data, timestamp
+            FROM user_activity_logs
+            WHERE user_id = ?
+            ORDER BY timestamp DESC
+            LIMIT ?
+        ''', (user_id, limit))
+        
+        logs = []
+        for row in cursor.fetchall():
+            import json
+            try:
+                activity_data = json.loads(row[1])
+                logs.append({
+                    'type': row[0],
+                    'data': activity_data,
+                    'timestamp': row[2]
+                })
+            except json.JSONDecodeError:
+                # Skip corrupted JSON data
+                continue
+        
+        conn.close()
+        return logs
+    
+    def get_user_activity_count(self, user_id: int) -> int:
+        """Get total count of user activity logs"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT COUNT(*) FROM user_activity_logs WHERE user_id = ?', (user_id,))
+        count = cursor.fetchone()[0]
+        conn.close()
+        
+        return count
+    
+    def clear_user_activity_logs(self, user_id: int, days_old: int = 30):
+        """Clear old activity logs for a user (older than specified days)"""
+        from datetime import datetime, timedelta
+        
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        cutoff_date = datetime.now() - timedelta(days=days_old)
+        
+        cursor.execute('''
+            DELETE FROM user_activity_logs 
+            WHERE user_id = ? AND timestamp < ?
+        ''', (user_id, cutoff_date.isoformat()))
+        
+        deleted_count = cursor.rowcount
+        conn.commit()
+        conn.close()
+        
+        return deleted_count

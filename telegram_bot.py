@@ -102,6 +102,14 @@ class TelegramBot:
             last_name=user.last_name
         )
         
+        # Log user activity
+        self.db.log_user_activity(user.id, 'command', {
+            'command': 'start',
+            'is_new_user': is_new_user,
+            'has_referral_code': bool(context.args),
+            'user_agent': str(update.get_bot() or 'unknown')
+        })
+        
         # Handle referral code if provided and user is new
         referral_bonus_info: Optional[Dict[str, int]] = None
         if is_new_user and context.args:
@@ -366,6 +374,14 @@ class TelegramBot:
     async def language_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle /language command - Show language selection"""
         user_lang = get_user_language(update.effective_user.id, self.db)
+        
+        # Log user activity
+        self.db.log_user_activity(update.effective_user.id, 'command', {
+            'command': 'language',
+            'action': 'opened_language_menu',
+            'current_language': user_lang
+        })
+        
         reply_markup = self._build_language_keyboard(user_lang, "set_lang_")
         
         select_text = get_text('language.select', user_lang)
@@ -471,6 +487,12 @@ class TelegramBot:
         user_lang = get_user_language(update.effective_user.id, self.db)
         chat_id = update.effective_chat.id
         
+        # Log user activity
+        self.db.log_user_activity(update.effective_user.id, 'command', {
+            'command': 'menu',
+            'action': 'opened_main_menu'
+        })
+        
         await self.show_glass_menu(chat_id, user_lang, context)
     
     async def handle_menu_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -481,6 +503,13 @@ class TelegramBot:
         user_id = query.from_user.id
         callback_data = query.data
         user_lang = get_user_language(user_id, self.db)
+        
+        # Log user activity
+        self.db.log_user_activity(user_id, 'callback', {
+            'callback_data': callback_data,
+            'action': 'button_click',
+            'menu_context': 'main_menu'
+        })
         
         # Map callback commands to actual methods
         command_map = {
@@ -617,6 +646,15 @@ class TelegramBot:
             lang_code = callback_data.replace("set_lang_", "")
             
             if translation_manager.is_supported_language(lang_code):
+                # Log user activity before changing language
+                old_lang = get_user_language(user_id, self.db)
+                self.db.log_user_activity(user_id, 'settings', {
+                    'action': 'changed_language',
+                    'old_language': old_lang,
+                    'new_language': lang_code,
+                    'language_name': translation_manager.get_language_name(lang_code)
+                })
+                
                 # Update user's language preference
                 self.db.set_user_language(user_id, lang_code)
                 
@@ -724,6 +762,13 @@ class TelegramBot:
         """Show available packages"""
         user_lang = get_user_language(update.effective_user.id, self.db)
         packages = self.db.get_packages()
+        
+        # Log user activity
+        self.db.log_user_activity(update.effective_user.id, 'command', {
+            'command': 'packages',
+            'action': 'viewed_packages',
+            'packages_count': len(packages)
+        })
         
         if not packages:
             await update.message.reply_text(get_text('packages.no_packages', user_lang))
@@ -984,6 +1029,13 @@ Use /packages to buy more credits!
         # Update user activity
         self.db.update_user_activity(user_id)
         
+        # Log user activity for text message
+        self.db.log_user_activity(user_id, 'ai_interaction', {
+            'action': 'sent_text_message',
+            'message_length': len(user_message),
+            'has_conversation_memory': self.db.get_setting('enable_conversation_memory', 'true') == 'true'
+        })
+        
         # Check if user has credits
         if not self.db.use_message_credit(user_id, 'text'):
             await update.message.reply_text(get_text('credits.not_enough_text', user_lang))
@@ -1043,6 +1095,12 @@ Use /packages to buy more credits!
         
         # Update user activity
         self.db.update_user_activity(user_id)
+        
+        # Log user activity for image message
+        self.db.log_user_activity(user_id, 'ai_interaction', {
+            'action': 'sent_image_message',
+            'has_caption': update.message.caption is not None
+        })
         
         # Check if user has credits
         if not self.db.use_message_credit(user_id, 'image'):
@@ -1114,6 +1172,12 @@ Use /packages to buy more credits!
         
         # Update user activity
         self.db.update_user_activity(user_id)
+        
+        # Log user activity for video message
+        self.db.log_user_activity(user_id, 'ai_interaction', {
+            'action': 'sent_video_message',
+            'has_caption': update.message.caption is not None
+        })
         
         # Check if user has credits
         if not self.db.use_message_credit(user_id, 'video'):
@@ -1197,6 +1261,12 @@ Use /packages to buy more credits!
             await self.handle_ton_purchase(query, package_id)
 
         elif data == "show_packages":
+            # Log user activity for viewing package selection
+            self.db.log_user_activity(query.from_user.id, 'navigation', {
+                'action': 'viewed_package_selection',
+                'source': 'menu_callback'
+            })
+            
             packages = self.db.get_packages()
             keyboard = []
             
@@ -1267,6 +1337,12 @@ Use /packages to buy more credits!
             await query.edit_message_text(dashboard_text, reply_markup=reply_markup)
         
         elif data == "show_referrals":
+            # Log user activity for viewing referrals
+            self.db.log_user_activity(query.from_user.id, 'navigation', {
+                'action': 'viewed_referrals',
+                'source': 'menu_callback'
+            })
+            
             # Show user's referral details
             user_id = query.from_user.id
             referral_stats = self.db.get_user_referrals(user_id)
@@ -1318,6 +1394,16 @@ Use /packages to buy more credits!
             return
 
         user_id = query.from_user.id
+        
+        # Log user activity
+        self.db.log_user_activity(user_id, 'purchase', {
+            'action': 'initiated_stars_purchase',
+            'package_id': package_id,
+            'package_name': package['name'],
+            'payment_method': 'stars',
+            'amount': package['price_stars']
+        })
+        
         amount = package['price_stars']
 
         result = await self.payment_handler.create_stars_payment(user_id, package_id, amount)
@@ -1348,6 +1434,16 @@ Use /packages to buy more credits!
             return
         
         user_id = query.from_user.id
+        
+        # Log user activity
+        self.db.log_user_activity(user_id, 'purchase', {
+            'action': 'initiated_ton_purchase',
+            'package_id': package_id,
+            'package_name': package['name'],
+            'payment_method': 'ton',
+            'amount': package['price_ton']
+        })
+        
         amount = package['price_ton']
         
         result = await self.payment_handler.create_ton_payment(user_id, package_id, amount)
