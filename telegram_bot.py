@@ -151,8 +151,7 @@ class TelegramBot:
             f"/referral - {get_text('commands.referral', user_lang)}",
             f"/enterreferral - {get_text('commands.enterreferral', user_lang)}",
             f"/reset - {get_text('commands.reset', user_lang)}",
-            f"/language - {get_text('commands.language', user_lang)}",
-            f"/testapi - {get_text('commands.testapi', user_lang)}"
+            f"/language - {get_text('commands.language', user_lang)}"
         ])
         
         message_types = get_text('help.message_types', user_lang)
@@ -200,8 +199,7 @@ class TelegramBot:
             f"/referral - {get_text('commands.referral', user_lang)}",
             f"/enterreferral - {get_text('commands.enterreferral', user_lang)}",
             f"/reset - {get_text('commands.reset', user_lang)}",
-            f"/language - {get_text('commands.language', user_lang)}",
-            f"/testapi - {get_text('commands.testapi', user_lang)}"
+            f"/language - {get_text('commands.language', user_lang)}"
         ])
         
         message_types = get_text('help.message_types', user_lang)
