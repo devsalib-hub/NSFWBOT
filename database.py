@@ -34,10 +34,87 @@ class Database:
             os.makedirs(db_dir, exist_ok=True)
         
         self.db_path = db_path
+        self.connection_pool = []
+        self.pool_size = 5  # Keep 5 connections ready
         self.init_database()
     
     def get_connection(self):
-        return sqlite3.connect(self.db_path)
+        """Get database connection with optimized settings for production"""
+        import threading
+        
+        # Simple connection pooling for better performance
+        if self.connection_pool and len(self.connection_pool) > 0:
+            try:
+                conn = self.connection_pool.pop()
+                # Test if connection is still valid
+                conn.execute('SELECT 1')
+                return conn
+            except:
+                # Connection is dead, create new one
+                pass
+        
+        # Create new connection with optimized settings
+        conn = sqlite3.connect(self.db_path, timeout=30.0)
+        
+        # Enable WAL mode for better concurrency and reliability
+        conn.execute('PRAGMA journal_mode=WAL')
+        conn.execute('PRAGMA synchronous=NORMAL')  # Good balance of speed vs safety
+        conn.execute('PRAGMA cache_size=-64000')   # 64MB cache
+        conn.execute('PRAGMA temp_store=MEMORY')    # Store temp tables in memory
+        conn.execute('PRAGMA mmap_size=268435456')  # 256MB memory map
+        
+        # Enable foreign keys
+        conn.execute('PRAGMA foreign_keys=ON')
+        
+        return conn
+    
+    def return_connection(self, conn):
+        """Return connection to pool if pool not full"""
+        if len(self.connection_pool) < self.pool_size:
+            try:
+                # Test connection before returning to pool
+                conn.execute('SELECT 1')
+                self.connection_pool.append(conn)
+            except:
+                # Connection is bad, don't return to pool
+                conn.close()
+        else:
+            conn.close()
+    
+    def health_check(self):
+        """Check database health and connectivity"""
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('SELECT COUNT(*) FROM users')
+                user_count = cursor.fetchone()[0]
+                cursor.execute('SELECT COUNT(*) FROM message_history')
+                message_count = cursor.fetchone()[0]
+                return {
+                    'status': 'healthy',
+                    'user_count': user_count,
+                    'message_count': message_count,
+                    'pool_size': len(self.connection_pool)
+                }
+        except Exception as e:
+            return {
+                'status': 'unhealthy',
+                'error': str(e)
+            }
+    
+    def get_db_connection(self):
+        """Context manager for database connections with automatic pooling"""
+        from contextlib import contextmanager
+        
+        @contextmanager
+        def connection_manager():
+            conn = self.get_connection()
+            try:
+                yield conn
+            finally:
+                self.return_connection(conn)
+        
+        return connection_manager()
     
     def init_database(self):
         """Initialize all database tables"""

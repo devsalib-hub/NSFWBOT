@@ -1686,8 +1686,18 @@ Use /packages to buy more credits!
             
             logger.info("Bot starting...")
             
-            # Run the bot
-            self.app.run_polling(allowed_updates=Update.ALL_TYPES)
+            # Run the bot with optimized polling settings for production
+            self.app.run_polling(
+                poll_interval=1.0,                    # Check for updates every 1 second
+                timeout=30,                          # Timeout for each poll request
+                drop_pending_updates=True,           # Ignore old updates on restart (prevents spam)
+                allowed_updates=Update.ALL_TYPES,    # Accept all update types
+                read_timeout=30,                     # Socket read timeout
+                write_timeout=30,                    # Socket write timeout
+                connect_timeout=30,                  # Connection timeout
+                pool_timeout=30,                     # Connection pool timeout
+                bootstrap_retries=5                  # Retry connection on startup
+            )
             
         except Exception as e:
             logger.error(f"Error starting bot: {str(e)}")

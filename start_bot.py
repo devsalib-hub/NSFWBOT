@@ -13,6 +13,9 @@ import signal
 from pathlib import Path
 from typing import Optional
 import threading
+import time
+import gc
+import psutil
 
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent))
@@ -69,31 +72,69 @@ class BotManager:
             return False
     
     def start_telegram_bot(self):
-        """Start the Telegram bot"""
-        print("🤖 Starting Telegram bot...")
+        """Start the Telegram bot with auto-restart capability"""
+        print("🤖 Starting Telegram bot with auto-restart...")
         try:
             # Import and run the bot directly
             from telegram_bot import TelegramBot
+            import time
+            import gc
+            import psutil
+            import os
             
             # Run in a separate thread instead of process
             import threading
             import asyncio
             
             def run_bot():
-                try:
-                    # Create new event loop for this thread
-                    loop = asyncio.new_event_loop()
-                    asyncio.set_event_loop(loop)
-                    
-                    bot = TelegramBot()
-                    bot.run()
-                except Exception as e:
-                    print(f"Bot error: {e}")
+                restart_count = 0
+                max_restarts = 10  # Prevent infinite restart loops
+                
+                while restart_count < max_restarts:
+                    try:
+                        print(f"🤖 Starting bot instance #{restart_count + 1}")
+                        
+                        # Create new event loop for this thread
+                        loop = asyncio.new_event_loop()
+                        asyncio.set_event_loop(loop)
+                        
+                        bot = TelegramBot()
+                        bot.run()
+                        
+                        # If we reach here, bot exited normally
+                        print("🤖 Bot exited normally")
+                        break
+                        
+                    except Exception as e:
+                        restart_count += 1
+                        print(f"❌ Bot crashed (attempt {restart_count}/{max_restarts}): {e}")
+                        
+                        # Memory cleanup
+                        gc.collect()
+                        
+                        # Check memory usage
+                        try:
+                            process = psutil.Process(os.getpid())
+                            memory_mb = process.memory_info().rss / 1024 / 1024
+                            print(f"📊 Memory usage: {memory_mb:.1f}MB")
+                            
+                            if memory_mb > 800:  # If over 800MB
+                                print("⚠️ High memory usage detected, forcing cleanup")
+                                gc.collect()
+                        except:
+                            pass
+                        
+                        if restart_count < max_restarts:
+                            print(f"🔄 Restarting bot in 30 seconds...")
+                            time.sleep(30)
+                        else:
+                            print("❌ Maximum restart attempts reached. Bot stopped.")
+                            break
             
             bot_thread = threading.Thread(target=run_bot, daemon=True)
             bot_thread.start()
             
-            print(f"✅ Telegram bot started")
+            print(f"✅ Telegram bot started with auto-restart capability")
             return bot_thread
             
         except Exception as e:

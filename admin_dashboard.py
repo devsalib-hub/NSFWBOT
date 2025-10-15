@@ -12,6 +12,8 @@ import subprocess
 import sys
 import requests
 import asyncio
+import psutil
+import time
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-change-this'  # Change this in production
@@ -178,6 +180,58 @@ def login():
 def logout():
     session.pop('logged_in', None)
     return redirect(url_for('login'))
+
+@app.route('/health')
+def health_check():
+    """Health check endpoint for monitoring"""
+    try:
+        import psutil
+        import os
+        from datetime import datetime
+        
+        # Get system stats
+        process = psutil.Process(os.getpid())
+        memory_mb = process.memory_info().rss / 1024 / 1024
+        cpu_percent = process.cpu_percent(interval=0.1)
+        
+        # Get database health
+        db_health = db.health_check()
+        
+        # Get bot status (simplified check)
+        bot_status = "unknown"
+        try:
+            # Check if bot token is configured
+            bot_token = db.get_setting('bot_token')
+            bot_status = "configured" if bot_token else "not_configured"
+        except:
+            bot_status = "error"
+        
+        health_data = {
+            'status': 'healthy' if db_health['status'] == 'healthy' else 'unhealthy',
+            'timestamp': datetime.now().isoformat(),
+            'version': '1.0.0',
+            'system': {
+                'memory_mb': round(memory_mb, 1),
+                'cpu_percent': round(cpu_percent, 1),
+                'uptime_seconds': int(time.time() - process.create_time())
+            },
+            'database': db_health,
+            'bot': {
+                'status': bot_status
+            }
+        }
+        
+        # Return appropriate HTTP status
+        status_code = 200 if health_data['status'] == 'healthy' else 503
+        
+        return jsonify(health_data), status_code
+        
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'error': str(e),
+            'timestamp': datetime.now().isoformat()
+        }), 500
 
 @app.route('/')
 @login_required
