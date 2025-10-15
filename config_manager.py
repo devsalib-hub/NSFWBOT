@@ -1,238 +1,220 @@
 #!/usr/bin/env python3
-"""
-Configuration Management Utility
-Helps manage bot configuration through command line or interactive mode
-"""
+"""Configuration Management Utility that stores settings in the database."""
 
-import os
-import sys
-import json
-from pathlib import Path
-from typing import Dict, Any
+import argparse
+from typing import Dict, Optional
+
+from database import Database
+from config import Config
+
 
 class ConfigManager:
-    def __init__(self, env_file='.env'):
-        self.env_file = Path(env_file)
-        self.config = {}
-        
-        if self.env_file.exists():
-            self.load_config()
-    
-    def load_config(self):
-        """Load configuration from .env file"""
-        with open(self.env_file, 'r') as f:
-            for line in f:
-                line = line.strip()
-                if line and not line.startswith('#') and '=' in line:
-                    key, value = line.split('=', 1)
-                    self.config[key.strip()] = value.strip()
-    
-    def save_config(self):
-        """Save configuration to .env file"""
-        with open(self.env_file, 'w') as f:
-            f.write("# Telegram Bot Configuration\n")
-            f.write("# Generated automatically - modify with caution\n\n")
-            
-            for key, value in self.config.items():
-                f.write(f"{key}={value}\n")
-        
-        print(f"✅ Configuration saved to {self.env_file}")
-    
-    def set_config(self, key: str, value: str):
-        """Set a configuration value"""
-        self.config[key] = value
-        print(f"✅ Set {key} = {value}")
-    
+    """Helper for reading and updating admin settings."""
+
+    KEY_MAP: Dict[str, str] = {
+        'BOT_TOKEN': 'bot_token',
+        'ADMIN_CHAT_ID': 'admin_chat_id',
+        'ADMIN_USERNAME': 'admin_username',
+        'ADMIN_PASSWORD': 'admin_password',
+        'SECRET_KEY': 'secret_key',
+        'SIMULATION_MODE': 'simulation_mode',
+        'FREE_MESSAGES': 'free_messages',
+        'FREE_TEXT_MESSAGES': 'free_text_messages',
+        'FREE_IMAGE_MESSAGES': 'free_image_messages',
+        'FREE_VIDEO_MESSAGES': 'free_video_messages',
+        'TELEGRAM_STARS_ENABLED': 'telegram_stars_enabled',
+        'TON_ENABLED': 'ton_enabled',
+        'TON_API_KEY': 'ton_api_key',
+        'TON_WALLET_ADDRESS': 'ton_mainnet_wallet_address',
+        'TON_MAINNET_WALLET_ADDRESS': 'ton_mainnet_wallet_address',
+        'TON_TESTNET_WALLET_ADDRESS': 'ton_testnet_wallet_address',
+        'TON_NETWORK_MODE': 'ton_network_mode',
+        'WEBHOOK_URL': 'webhook_url',
+        'AI_API_KEY': 'ai_api_key',
+        'OPENROUTER_API_KEY': 'openrouter_api_key',
+        'AI_MODEL': 'ai_model',
+        'OPENROUTER_MODEL': 'openrouter_model',
+        'AI_BASE_URL': 'ai_base_url',
+        'DASHBOARD_HOST': 'dashboard_host',
+        'DASHBOARD_PORT': 'dashboard_port',
+        'LOG_LEVEL': 'log_level',
+        'BOT_RUNNING': 'bot_running',
+        'BOT_ACTIVE': 'bot_active',
+        'ACTIVITY_LOGGING_ENABLED': 'activity_logging_enabled',
+        'MAX_IMAGE_SIZE': 'max_image_size',
+        'MAX_VIDEO_SIZE': 'max_video_size',
+        'AI_RESPONSE_TIMEOUT': 'ai_response_timeout',
+        'MAX_REQUESTS_PER_MINUTE': 'max_requests_per_minute',
+        'MAX_REQUESTS_PER_HOUR': 'max_requests_per_hour',
+        'CONVERSATION_HISTORY_LENGTH': 'conversation_history_length',
+        'CONTEXT_WINDOW_HOURS': 'context_window_hours',
+        'INPUT_TOKEN_PRICE_PER_1M': 'input_token_price_per_1m',
+        'OUTPUT_TOKEN_PRICE_PER_1M': 'output_token_price_per_1m',
+        'TON_PRICE_USD': 'ton_price_usd',
+        'STARS_PRICE_USD': 'stars_price_usd',
+    }
+
+    SENSITIVE_KEYS = {
+        'bot_token',
+        'ai_api_key',
+        'openrouter_api_key',
+        'admin_password',
+        'secret_key',
+        'ton_api_key',
+    }
+
+    def __init__(self, db_path: Optional[str] = None) -> None:
+        self.db = Database(db_path)
+        self.load_config()
+
+    def load_config(self) -> None:
+        """Refresh settings from the database."""
+        self.config = self.db.get_all_settings()
+
+    def _resolve_key(self, key: str) -> str:
+        return self.KEY_MAP.get(key.upper(), key)
+
+    def set_config(self, key: str, value) -> None:
+        """Persist a configuration value."""
+        db_key = self._resolve_key(key)
+        normalized = 'true' if value is True else 'false' if value is False else str(value)
+        self.db.update_setting(db_key, normalized)
+        self.config[db_key] = normalized
+        print(f"✅ Set {db_key} = {normalized}")
+
     def get_config(self, key: str) -> str:
-        """Get a configuration value"""
-        return self.config.get(key, "")
-    
-    def interactive_setup(self):
-        """Interactive configuration setup"""
+        db_key = self._resolve_key(key)
+        return self.config.get(db_key, '')
+
+    def interactive_setup(self) -> None:
+        """Interactive wizard for first-time configuration."""
         print("🤖 Telegram Bot Configuration Setup")
         print("=" * 50)
-        
-        # Bot Token
+
         bot_token = input("Enter your Telegram Bot Token (from @BotFather): ").strip()
         if bot_token:
             self.set_config('BOT_TOKEN', bot_token)
-        
-        # Admin Chat ID
-        admin_id = input("Enter your Telegram User ID (admin): ").strip()
-        if admin_id:
-            self.set_config('ADMIN_CHAT_ID', admin_id)
-        
-        # OpenRouter API Key
+
+        admin_id = input("Enter your Telegram User ID (admin): ").strip() or '0'
+        self.set_config('ADMIN_CHAT_ID', admin_id)
+
         print("\n🧠 AI Configuration")
-        openrouter_key = input("Enter your OpenRouter API Key (from openrouter.ai): ").strip()
-        if openrouter_key:
-            self.set_config('OPENROUTER_API_KEY', openrouter_key)
-        
-        # AI Model
+        api_key = input("Enter your OpenRouter/Venice API Key: ").strip()
+        if api_key:
+            self.set_config('AI_API_KEY', api_key)
+            self.set_config('OPENROUTER_API_KEY', api_key)
+
+        models = Config.get_ai_models()
         print("\nAvailable AI Models:")
-        models = [
-            "openai/gpt-3.5-turbo (Fast, cheap)",
-            "openai/gpt-4 (Better quality, more expensive)",
-            "anthropic/claude-3-haiku (Fast Claude)",
-            "anthropic/claude-3-sonnet (Balanced Claude)",
-            "google/gemini-pro (Google's model)",
-            "mistralai/mistral-7b-instruct (Open source)"
-        ]
-        
-        for i, model in enumerate(models, 1):
-            print(f"{i}. {model}")
-        
-        model_choice = input("Choose AI model (1-6, default: 1): ").strip()
-        model_map = {
-            '1': 'openai/gpt-3.5-turbo',
-            '2': 'openai/gpt-4',
-            '3': 'anthropic/claude-3-haiku',
-            '4': 'anthropic/claude-3-sonnet',
-            '5': 'google/gemini-pro',
-            '6': 'mistralai/mistral-7b-instruct'
-        }
-        
-        selected_model = model_map.get(model_choice, 'openai/gpt-3.5-turbo')
+        for idx, model in enumerate(models, 1):
+            print(f" {idx}. {model}")
+        choice = input("Choose AI model (1-6, default 1): ").strip()
+        try:
+            selected_model = models[int(choice) - 1]
+        except (ValueError, IndexError):
+            selected_model = models[0]
+        self.set_config('AI_MODEL', selected_model)
         self.set_config('OPENROUTER_MODEL', selected_model)
-        
-        # Payment Configuration
+
+        base_url = input("API Base URL (default https://openrouter.ai/api/v1): ").strip() or 'https://openrouter.ai/api/v1'
+        self.set_config('AI_BASE_URL', base_url)
+
         print("\n💰 Payment Configuration")
-        ton_wallet = input("Enter your TON Wallet Address (optional): ").strip()
+        ton_wallet = input("TON mainnet wallet address (optional): ").strip()
         if ton_wallet:
-            self.set_config('TON_WALLET_ADDRESS', ton_wallet)
-        
-        # Admin Dashboard
-        print("\n🔧 Admin Dashboard")
-        admin_user = input("Admin username (default: admin): ").strip() or "admin"
-        admin_pass = input("Admin password (default: admin123): ").strip() or "admin123"
-        
+            self.set_config('TON_MAINNET_WALLET_ADDRESS', ton_wallet)
+
+        ton_test_wallet = input("TON testnet wallet address (optional): ").strip()
+        if ton_test_wallet:
+            self.set_config('TON_TESTNET_WALLET_ADDRESS', ton_test_wallet)
+
+        print("\n🔧 Admin Dashboard Credentials")
+        admin_user = input("Admin username (default admin): ").strip() or 'admin'
+        admin_pass = input("Admin password (default admin123): ").strip() or 'admin123'
         self.set_config('ADMIN_USERNAME', admin_user)
         self.set_config('ADMIN_PASSWORD', admin_pass)
-        
-        # Basic Settings
+
+        secret_key = input("Flask secret key (blank to keep default): ").strip()
+        if secret_key:
+            self.set_config('SECRET_KEY', secret_key)
+
         print("\n⚙️ Basic Settings")
-        sim_mode = input("Enable simulation mode for testing? (y/N): ").strip().lower()
-        self.set_config('SIMULATION_MODE', 'true' if sim_mode == 'y' else 'false')
-        
-        free_msgs = input("Number of free messages per user (default: 1): ").strip() or "1"
-        self.set_config('FREE_MESSAGES', free_msgs)
-        
-        # Set defaults for other settings
-        self.set_config('DATABASE_PATH', 'bot_database.db')
-        self.set_config('DASHBOARD_HOST', '127.0.0.1')
-        self.set_config('DASHBOARD_PORT', '5000')
-        self.set_config('SECRET_KEY', 'change-this-secret-key-in-production')
+        sim_mode = input("Enable simulation mode for testing? (y/N): ").strip().lower() == 'y'
+        self.set_config('SIMULATION_MODE', 'true' if sim_mode else 'false')
         self.set_config('BOT_RUNNING', 'true')
-        self.set_config('TELEGRAM_STARS_ENABLED', 'true')
-        self.set_config('TON_ENABLED', 'true')
-        self.set_config('DEFAULT_TEXT_PRICE', '1')
-        self.set_config('DEFAULT_IMAGE_PRICE', '2')
-        self.set_config('DEFAULT_VIDEO_PRICE', '3')
-        self.set_config('MAX_IMAGE_SIZE', '10')
-        self.set_config('MAX_VIDEO_SIZE', '50')
-        self.set_config('AI_RESPONSE_TIMEOUT', '30')
-        self.set_config('MAX_REQUESTS_PER_MINUTE', '20')
-        self.set_config('MAX_REQUESTS_PER_HOUR', '100')
-        self.set_config('LOG_LEVEL', 'INFO')
-        
-        print("\n✅ Configuration complete!")
-        
-        save = input("Save configuration to .env file? (Y/n): ").strip().lower()
-        if save != 'n':
-            self.save_config()
-    
-    def validate_config(self):
-        """Validate current configuration"""
+        self.set_config('BOT_ACTIVE', 'true')
+
+        free_msgs = input("Number of free text messages (default 5): ").strip() or '5'
+        free_img = input("Number of free image messages (default 2): ").strip() or '2'
+        free_vid = input("Number of free video messages (default 1): ").strip() or '1'
+        self.set_config('FREE_TEXT_MESSAGES', free_msgs)
+        self.set_config('FREE_IMAGE_MESSAGES', free_img)
+        self.set_config('FREE_VIDEO_MESSAGES', free_vid)
+        self.set_config('FREE_MESSAGES', free_msgs)
+
+        print("\n✅ Configuration saved to database.")
+
+    def validate_config(self) -> bool:
+        """Validate required configuration values exist."""
+        self.load_config()
         errors = []
-        warnings = []
-        
-        # Required settings
-        required = ['BOT_TOKEN', 'OPENROUTER_API_KEY']
-        for key in required:
-            if not self.config.get(key):
-                errors.append(f"Missing required setting: {key}")
-        
-        # Recommended settings
-        recommended = ['ADMIN_CHAT_ID', 'TON_WALLET_ADDRESS']
-        for key in recommended:
-            if not self.config.get(key):
-                warnings.append(f"Recommended setting not configured: {key}")
-        
-        # Validate values
-        try:
-            int(self.config.get('ADMIN_CHAT_ID', '0'))
-        except ValueError:
-            errors.append("ADMIN_CHAT_ID must be a number")
-        
-        try:
-            int(self.config.get('FREE_MESSAGES', '1'))
-        except ValueError:
-            errors.append("FREE_MESSAGES must be a number")
-        
-        # Print results
+        if not self.config.get('bot_token'):
+            errors.append('bot_token is missing')
+        if not self.config.get('ai_api_key') and not self.config.get('openrouter_api_key'):
+            errors.append('AI API key is missing')
+
         if errors:
             print("❌ Configuration Errors:")
-            for error in errors:
-                print(f"  - {error}")
-        
-        if warnings:
-            print("⚠️ Configuration Warnings:")
-            for warning in warnings:
-                print(f"  - {warning}")
-        
-        if not errors and not warnings:
-            print("✅ Configuration is valid!")
-        
-        return len(errors) == 0
-    
-    def show_config(self):
-        """Display current configuration (masking sensitive values)"""
-        print("📋 Current Configuration:")
-        print("=" * 50)
-        
-        sensitive_keys = ['BOT_TOKEN', 'OPENROUTER_API_KEY', 'ADMIN_PASSWORD', 'SECRET_KEY']
-        
-        for key, value in sorted(self.config.items()):
-            if key in sensitive_keys and value:
-                display_value = f"{value[:8]}..." if len(value) > 8 else "***"
-            else:
-                display_value = value
-            
-            print(f"{key:<25} = {display_value}")
+            for err in errors:
+                print(f"  - {err}")
+            return False
 
-def main():
-    """Main CLI interface"""
-    import argparse
-    
+        print("✅ Configuration is valid!")
+        return True
+
+    def show_config(self) -> None:
+        """Print the current configuration (masking sensitive values)."""
+        self.load_config()
+        print("📋 Current Configuration")
+        print("=" * 50)
+        for key in sorted(self.config.keys()):
+            value = self.config[key]
+            if key in self.SENSITIVE_KEYS and value:
+                display = f"{value[:8]}..." if len(value) > 8 else "***"
+            else:
+                display = value
+            print(f"{key:<30} = {display}")
+
+
+def main() -> None:
     parser = argparse.ArgumentParser(description="Telegram Bot Configuration Manager")
+    parser.add_argument('--database', metavar='PATH', help='Path to bot_database.db (defaults to repository location)')
     parser.add_argument('--setup', action='store_true', help='Interactive setup')
     parser.add_argument('--validate', action='store_true', help='Validate configuration')
     parser.add_argument('--show', action='store_true', help='Show current configuration')
     parser.add_argument('--set', nargs=2, metavar=('KEY', 'VALUE'), help='Set configuration value')
     parser.add_argument('--get', metavar='KEY', help='Get configuration value')
-    parser.add_argument('--env-file', default='.env', help='Environment file path')
-    
+
     args = parser.parse_args()
-    
-    config_manager = ConfigManager(args.env_file)
-    
+    manager = ConfigManager(db_path=args.database)
+
     if args.setup:
-        config_manager.interactive_setup()
+        manager.interactive_setup()
     elif args.validate:
-        config_manager.validate_config()
+        manager.validate_config()
     elif args.show:
-        config_manager.show_config()
+        manager.show_config()
     elif args.set:
         key, value = args.set
-        config_manager.set_config(key, value)
-        config_manager.save_config()
+        manager.set_config(key, value)
     elif args.get:
-        value = config_manager.get_config(args.get)
+        value = manager.get_config(args.get)
         print(f"{args.get} = {value}")
     else:
         print("🤖 Telegram Bot Configuration Manager")
         print("Use --help for available options")
         print("\nQuick start: python config_manager.py --setup")
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     main()

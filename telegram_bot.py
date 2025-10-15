@@ -1732,7 +1732,7 @@ Use /packages to buy more credits!
             Config.validate_config()
             
             # Get bot token from database or config
-            bot_token = self.db.get_setting('bot_token', Config.BOT_TOKEN)
+            bot_token = self.db.get_setting('bot_token', Config.get_bot_token())
             
             # Create application with optimized HTTP client settings
             from telegram.request import HTTPXRequest

@@ -3,6 +3,15 @@ import json
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 import os
+import sys
+from pathlib import Path
+
+
+def _default_db_path() -> str:
+    """Determine default database path relative to the application location."""
+    if getattr(sys, 'frozen', False):
+        return str(Path(sys.executable).resolve().parent / 'bot_database.db')
+    return str(Path(__file__).resolve().parent / 'bot_database.db')
 
 def format_precise_number(value):
     """Format numbers with full precision, only removing trailing zeros"""
@@ -25,8 +34,11 @@ def format_precise_number(value):
 class Database:
     def __init__(self, db_path: str = None):
         if db_path is None:
-            # Use environment variable or default
-            db_path = os.getenv('DATABASE_PATH', 'bot_database.db')
+            # Use environment variable or default relative to application
+            env_path = os.getenv('DATABASE_PATH')
+            db_path = env_path if env_path else _default_db_path()
+        else:
+            db_path = str(Path(db_path).expanduser().resolve())
         
         # Ensure directory exists
         db_dir = os.path.dirname(db_path)
@@ -376,24 +388,53 @@ class Database:
         cursor = conn.cursor()
         
         default_settings = [
+            ("bot_token", ""),
+            ("admin_chat_id", "0"),
+            ("admin_username", "admin"),
+            ("admin_password", "admin123"),
+            ("secret_key", "change-this-secret-key-in-production"),
             ("bot_running", "true"),
-            ("free_messages", "1"),
+            ("bot_active", "false"),
+            ("simulation_mode", "true"),
+            ("log_level", "INFO"),
+            ("ai_api_key", ""),
+            ("ai_model", "openai/gpt-3.5-turbo"),
+            ("ai_base_url", "https://openrouter.ai/api/v1"),
+            ("openrouter_api_key", ""),
             ("openrouter_model", "openai/gpt-3.5-turbo"),
-            ("payment_stars_enabled", "true"),
-            ("payment_ton_enabled", "true"),
-            # Token pricing settings (Venice AI default pricing)
-            ("input_token_price_per_1m", "0.50"),    # $0.50 per 1M input tokens
-            ("output_token_price_per_1m", "1.50"),   # $1.50 per 1M output tokens
-            # Referral system settings
+            ("telegram_stars_enabled", "true"),
+            ("ton_enabled", "true"),
+            ("ton_api_key", ""),
+            ("ton_mainnet_wallet_address", ""),
+            ("ton_testnet_wallet_address", ""),
+            ("ton_network_mode", "sandbox"),
+            ("webhook_url", ""),
+            ("dashboard_host", "127.0.0.1"),
+            ("dashboard_port", "5000"),
+            ("free_messages", "1"),
+            ("free_text_messages", "5"),
+            ("free_image_messages", "2"),
+            ("free_video_messages", "1"),
             ("referral_system_enabled", "true"),
             ("referral_text_reward", "3"),
             ("referral_image_reward", "1"),
             ("referral_video_reward", "1"),
-            # TON payment settings
-            ("ton_testnet_mode", "true"),  # Start with testnet for safety
-            ("ton_api_key", ""),  # Optional API key
-            # Activity logging settings
-            ("activity_logging_enabled", "true")  # Enable activity logging by default
+            ("max_requests_per_minute", "20"),
+            ("max_requests_per_hour", "100"),
+            ("max_image_size", "10"),
+            ("max_video_size", "50"),
+            ("ai_response_timeout", "30"),
+            ("conversation_history_length", "10"),
+            ("context_window_hours", "24"),
+            ("enable_conversation_memory", "true"),
+            ("activity_logging_enabled", "true"),
+            ("input_token_price_per_1m", "0.50"),
+            ("output_token_price_per_1m", "1.50"),
+            ("ton_price_usd", "5.50"),
+            ("stars_price_usd", "0.013"),
+            ("payment_stars_enabled", "true"),
+            ("payment_ton_enabled", "true"),
+            ("ton_testnet_mode", "true")
         ]
         
         for key, value in default_settings:

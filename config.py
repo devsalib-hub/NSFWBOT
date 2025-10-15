@@ -1,7 +1,10 @@
 import os
 import sys
+from functools import lru_cache
 from pathlib import Path
-from dotenv import load_dotenv
+from typing import Optional
+
+from database import Database
 
 
 def _get_app_root() -> Path:
@@ -10,57 +13,48 @@ def _get_app_root() -> Path:
         return Path(sys.executable).resolve().parent
     return Path(__file__).resolve().parent
 
-# Load environment variables
-load_dotenv(dotenv_path=_get_app_root() / '.env', override=False)
+
+@lru_cache(maxsize=1)
+def _get_database() -> Database:
+    """Return a shared Database instance for configuration access."""
+    return Database()
+
 
 class Config:
-    # Essential Bot Configuration (still from environment)
-    BOT_TOKEN = os.getenv('BOT_TOKEN')
-    _admin_chat_id = os.getenv('ADMIN_CHAT_ID', '0')
-    try:
-        ADMIN_CHAT_ID = int(_admin_chat_id)
-    except ValueError:
-        # If it's a username, set to 0 and let the bot handle it
-        ADMIN_CHAT_ID = 0
-        ADMIN_USERNAME_TELEGRAM = _admin_chat_id
-    
-    # Database Configuration (essential for startup)
-    _db_path = os.getenv('DATABASE_PATH')
-    if _db_path:
-        DATABASE_PATH = str(Path(_db_path).expanduser().resolve())
-    else:
-        DATABASE_PATH = str((_get_app_root() / 'bot_database.db').resolve())
-    
-    # Admin Dashboard Security (essential for initial setup)
-    SECRET_KEY = os.getenv('SECRET_KEY', 'your-secret-key-here')
-    
-    # Webhook Configuration (environment-specific)
-    WEBHOOK_PATH = os.getenv('WEBHOOK_PATH', '/webhook')
-    
-    # All other settings are now managed via database settings:
-    # - Payment configuration (TON_WALLET_ADDRESS, TELEGRAM_STARS_ENABLED, TON_ENABLED)
-    # - Bot behavior (SIMULATION_MODE, BOT_RUNNING, FREE_MESSAGES)
-    # - Pricing (DEFAULT_TEXT_PRICE, DEFAULT_IMAGE_PRICE, DEFAULT_VIDEO_PRICE)
-    # - Limits (MAX_IMAGE_SIZE, MAX_VIDEO_SIZE, AI_RESPONSE_TIMEOUT)
-    # - Dashboard settings (DASHBOARD_HOST, DASHBOARD_PORT, ADMIN_USERNAME, ADMIN_PASSWORD)
-    # - Rate limiting (MAX_REQUESTS_PER_MINUTE, MAX_REQUESTS_PER_HOUR)
-    # - Logging (LOG_LEVEL)
-    # - Webhook URL (WEBHOOK_URL)
-    # - OpenRouter settings (OPENROUTER_API_KEY, OPENROUTER_MODEL)
-    
+    """Database-backed configuration helpers."""
+
+    REQUIRED_KEYS = ('bot_token',)
+
     @classmethod
-    def validate_config(cls):
-        """Validate that required configuration is present"""
-        required_vars = ['BOT_TOKEN']  # Only BOT_TOKEN is required from env
-        missing_vars = []
-        
-        for var in required_vars:
-            if not getattr(cls, var):
-                missing_vars.append(var)
-        
-        if missing_vars:
-            raise ValueError(f"Missing required environment variables: {', '.join(missing_vars)}")
-        
+    def get_setting(cls, key: str, default: Optional[str] = None) -> Optional[str]:
+        """Fetch a configuration value from the database with optional env fallback."""
+        value = _get_database().get_setting(key)
+        if value is None or value == '':
+            env_value = os.getenv(key.upper())
+            return env_value if env_value not in ('', None) else default
+        return value
+
+    @classmethod
+    def get_bot_token(cls) -> str:
+        """Convenience accessor for the Telegram bot token."""
+        return (cls.get_setting('bot_token', '') or '').strip()
+
+    @classmethod
+    def get_database_path(cls) -> str:
+        """Expose the resolved database path."""
+        return _get_database().db_path
+
+    @classmethod
+    def validate_config(cls) -> bool:
+        """Ensure required configuration keys are present before startup."""
+        missing = []
+        for key in cls.REQUIRED_KEYS:
+            if not cls.get_setting(key, '').strip():
+                missing.append(key)
+        if missing:
+            raise ValueError(
+                "Missing required configuration: " + ", ".join(missing)
+            )
         return True
     
     @classmethod
