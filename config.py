@@ -1,8 +1,17 @@
 import os
+import sys
+from pathlib import Path
 from dotenv import load_dotenv
 
+
+def _get_app_root() -> Path:
+    """Return directory containing the application files."""
+    if getattr(sys, 'frozen', False):
+        return Path(sys.executable).resolve().parent
+    return Path(__file__).resolve().parent
+
 # Load environment variables
-load_dotenv()
+load_dotenv(dotenv_path=_get_app_root() / '.env', override=False)
 
 class Config:
     # Essential Bot Configuration (still from environment)
@@ -16,7 +25,11 @@ class Config:
         ADMIN_USERNAME_TELEGRAM = _admin_chat_id
     
     # Database Configuration (essential for startup)
-    DATABASE_PATH = os.getenv('DATABASE_PATH', 'bot_database.db')
+    _db_path = os.getenv('DATABASE_PATH')
+    if _db_path:
+        DATABASE_PATH = str(Path(_db_path).expanduser().resolve())
+    else:
+        DATABASE_PATH = str((_get_app_root() / 'bot_database.db').resolve())
     
     # Admin Dashboard Security (essential for initial setup)
     SECRET_KEY = os.getenv('SECRET_KEY', 'your-secret-key-here')

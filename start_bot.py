@@ -25,12 +25,20 @@ from database import Database
 from telegram_bot import TelegramBot
 from admin_dashboard import app as dashboard_app
 
+
+def get_app_root() -> Path:
+    """Return the directory where the application should read/write runtime files."""
+    if getattr(sys, 'frozen', False):  # Running inside PyInstaller bundle
+        return Path(sys.executable).resolve().parent
+    return Path(__file__).resolve().parent
+
+
 class BotManager:
     def __init__(self):
         self.bot_thread = None
         self.dashboard_thread = None
         self.db = Database()
-        
+
     def validate_environment(self):
         """Validate that all required environment variables are set"""
         print("🔍 Validating configuration...")
@@ -48,13 +56,16 @@ class BotManager:
         """Setup logging configuration"""
         log_level_str = self.db.get_setting('log_level', 'INFO').upper()
         log_level = getattr(logging, log_level_str, logging.INFO)
+
+        log_path = get_app_root() / 'bot.log'
+        log_path.parent.mkdir(parents=True, exist_ok=True)
         
         logging.basicConfig(
             level=log_level,
             format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
             handlers=[
                 logging.StreamHandler(sys.stdout),
-                logging.FileHandler('bot.log')
+                logging.FileHandler(str(log_path), encoding='utf-8')
             ]
         )
         

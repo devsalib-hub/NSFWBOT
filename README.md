@@ -86,6 +86,18 @@ python start_bot.py dashboard-only
 Open http://127.0.0.1:5000 in your browser
 - Default login: `admin` / `admin123`
 
+## 🧰 Building a Standalone Executable
+
+1. (Optional) Activate your virtual environment.
+2. Install dependencies: `pip install -r requirements.txt`.
+3. Run the build script: `pwsh scripts/build_executable.ps1`.
+4. Collect the packaged bot from `dist/NSFWBot.exe`.
+
+Notes:
+- The script installs PyInstaller automatically if it is missing.
+- The database (`bot_database.db` by default) lives next to the executable; set `DATABASE_PATH` to move it elsewhere.
+- Re-run the script whenever project code or assets change to refresh the executable.
+
 ## 📖 Detailed Setup Guide
 
 ### Step 1: Get Telegram Bot Token
