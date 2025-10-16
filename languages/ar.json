@@ -46,7 +46,8 @@
         "check_payment_status": "🔍 التحقق من حالة الدفع",
         "view_dashboard": "📊 عرض لوحة التحكم",
         "buy_more": "🛒 شراء المزيد",
-        "check_again": "🔍 التحقق مرة أخرى"
+        "check_again": "🔍 التحقق مرة أخرى",
+        "contact_support": "💬 Contact Support"
     },
     "credits": {
         "not_enough_text": "❌ لا تملك رصيداً كافياً لرسائل النص!\n\nاستخدم /packages لشراء المزيد من الرصيد.",
@@ -59,10 +60,10 @@
         "default_video_caption": "قام المستخدم بإرسال فيديو"
     },
     "welcome": {
-    "title": "🚀 مرحباً بك في Next Void، {first_name}!",
+        "title": "🚀 مرحباً بك في Next Void، {first_name}!",
         "referral_bonus": "🎉 **تم تطبيق مكافأة الإحالة!**\nأنت وصديقك حصلتما على:\n📝 +{text_reward} رسائل نصية\n🖼️ +{image_reward} توليد صور\n🎥 +{video_reward} توليد فيديوهات\n",
-    "features": "مرحباً بك في Next Void، حيث نؤمن بأن الذكاء الاصطناعي يجب أن يبقى بلا رقابة ولا تصفية. ندرك أن هناك العديد من التطبيقات القيّمة للذكاء الاصطناعي التي يتم تقييدها أو حجبها من قبل الكيانات الكبرى. مهمتنا هي إعادة حرية الوصول إلى الذكاء الاصطناعي وتمكينك من استكشاف إمكاناته الكاملة والاستفادة منها دون حدود.",
-    "start_prompt": "🔥 ابدأ برسالة مثيرة للجدل وشاهد ما يصنعه Next Void.",
+        "features": "مرحباً بك في Next Void، حيث نؤمن بأن الذكاء الاصطناعي يجب أن يبقى بلا رقابة ولا تصفية. ندرك أن هناك العديد من التطبيقات القيّمة للذكاء الاصطناعي التي يتم تقييدها أو حجبها من قبل الكيانات الكبرى. مهمتنا هي إعادة حرية الوصول إلى الذكاء الاصطناعي وتمكينك من استكشاف إمكاناته الكاملة والاستفادة منها دون حدود.",
+        "start_prompt": "🔥 ابدأ برسالة مثيرة للجدل وشاهد ما يصنعه Next Void.",
         "free_messages": "🎁 رسائل مجانية للمستخدمين الجدد:\n📝 نص: {free_text} رسالة\n🖼️ صور: {free_image} توليد\n🎥 فيديوهات: {free_video} توليد",
         "after_free": "بعد استخدام رسائلك المجانية، ستحتاج إلى شراء حزمة للمتابعة.",
         "commands_info": "استخدم /packages لرؤية الحزم المتاحة\nاستخدم /dashboard للتحقق من الاستخدام\nاستخدم /referral للحصول على رابط الإحالة\nاستخدم /help لمزيد من الأوامر"
@@ -187,5 +188,13 @@
         "ton_payment_pending_title": "⏳ **الدفع قيد الانتظار**",
         "ton_payment_pending_details": "💰 المبلغ: {amount} TON\n📅 تم الإنشاء: {date}\n🆔 رقم المعاملة: {transaction}",
         "ton_payment_pending_body": "❌ لم يتم العثور على الدفع على البلوك تشين بعد.\n\n**يرجى التأكد من أنك:**\n✅ أرسلت بالضبط {amount} TON\n✅ استخدمت التعليق الصحيح: `Payment_{transaction}`\n✅ أرسلت إلى عنوان المحفظة الصحيح\n\n⏰ قد يستغرق ظهور المعاملة على البلوك تشين بضع دقائق."
+    },
+    "character": {
+        "select_title": "🎭 Choose Your AI Character",
+        "select_subtitle": "Select a character that matches your style:",
+        "selected": "✅ You selected: **{name}**\n\n{description}\n\nYou can change your character anytime from the menu!",
+        "change_character": "🎭 Change Character",
+        "no_character_selected": "⚠️ **Please select a character first!**\n\nUse /start to choose your AI character.",
+        "current_character": "🎭 **Current Character:**\n**{name}**\n{description}"
     }
 }

@@ -11,7 +11,6 @@
         "testapi": "🧪 تست اتصال API هوش مصنوعی (فقط ادمین)",
         "language": "🌐 تغییر زبان"
     },
-   
     "glass_menu": {
         "title": "🎛️ منوی دستورات تعاملی",
         "subtitle": "هر گزینه‌ای را که می‌خواهید انتخاب کنید:",
@@ -34,7 +33,8 @@
         "check_payment_status": "🔍 بررسی وضعیت پرداخت",
         "view_dashboard": "📊 مشاهده داشبورد",
         "buy_more": "🛒 خرید بیشتر",
-        "check_again": "🔍 بررسی دوباره"
+        "check_again": "🔍 بررسی دوباره",
+        "contact_support": "💬 Contact Support"
     },
     "credits": {
         "not_enough_text": "❌ اعتبار کافی برای پیام متنی ندارید!\n\nاز /packages برای خرید اعتبار بیشتر استفاده کنید.",
@@ -140,8 +140,8 @@
         "stats": "📊 آمار معرفی شما:\n👥 کل معرفی‌ها: {count}\n💰 پاداش‌های کسب شده: {rewards}",
         "how_it_works": "📋 نحوه عملکرد:\n1. لینک معرفی خود را با دوستان به اشتراک بگذارید\n2. وقتی آنها با استفاده از لینک شما بپیوندند، هر دو پاداش دریافت می‌کنید\n3. پاداش‌ها به طور خودکار به حساب شما اضافه می‌شوند",
         "rewards_info": "🎁 پاداش هر معرفی:\n📝 +{text} پیام متنی\n🖼️ +{image} تولید تصویر\n🎥 +{video} تولید ویدیو",
-    "share_referral_link": "📤 اشتراک لینک معرفی",
-    "share_message": "سلام، خوبی؟ تازه با یک هوش مصنوعی بدون سانسور به نام Next Void آشنا شدم. بیا با هم امتحانش کنیم: {referral_link}",
+        "share_referral_link": "📤 اشتراک لینک معرفی",
+        "share_message": "سلام، خوبی؟ تازه با یک هوش مصنوعی بدون سانسور به نام Next Void آشنا شدم. بیا با هم امتحانش کنیم: {referral_link}",
         "my_referrals": "📊 معرفی‌های من",
         "no_referrals_message": "👥 **معرفی‌های شما**\n\nهنوز کسی را معرفی نکرده‌اید. لینک معرفی خود را به اشتراک بگذارید تا شروع به دریافت پاداش کنید!",
         "referrals_header": "👥 **معرفی‌های شما** ({count} مورد)\n\n",
@@ -175,5 +175,13 @@
         "ton_payment_pending_title": "⏳ **پرداخت در انتظار**",
         "ton_payment_pending_details": "💰 مبلغ: {amount} TON\n📅 ایجاد شده: {date}\n🆔 شناسه تراکنش: {transaction}",
         "ton_payment_pending_body": "❌ پرداخت هنوز در بلاک‌چین پیدا نشده است.\n\n**لطفاً مطمئن شوید که:**\n✅ دقیقاً {amount} TON ارسال کرده‌اید\n✅ از توضیح صحیح استفاده کرده‌اید: `Payment_{transaction}`\n✅ به آدرس صحیح کیف پول ارسال کرده‌اید\n\n⏰ ممکن است چند دقیقه طول بکشد تا تراکنش در بلاک‌چین نمایش داده شود."
+    },
+    "character": {
+        "select_title": "🎭 Choose Your AI Character",
+        "select_subtitle": "Select a character that matches your style:",
+        "selected": "✅ You selected: **{name}**\n\n{description}\n\nYou can change your character anytime from the menu!",
+        "change_character": "🎭 Change Character",
+        "no_character_selected": "⚠️ **Please select a character first!**\n\nUse /start to choose your AI character.",
+        "current_character": "🎭 **Current Character:**\n**{name}**\n{description}"
     }
 }

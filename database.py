@@ -354,10 +354,30 @@ class Database:
         except sqlite3.OperationalError:
             pass
         
+        # Characters table (AI personality/role)
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS characters (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                description TEXT,
+                instruction TEXT NOT NULL,
+                is_active BOOLEAN DEFAULT TRUE,
+                created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        
+        # Add character_id column to users table if it doesn't exist
+        try:
+            cursor.execute('ALTER TABLE users ADD COLUMN character_id INTEGER REFERENCES characters(id)')
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+        
         conn.commit()
         conn.close()        # Insert default packages
         self.insert_default_packages()
         self.insert_default_settings()
+        self.insert_default_characters()
     
     def insert_default_packages(self):
         """Insert default packages if none exist"""
@@ -434,7 +454,8 @@ class Database:
             ("stars_price_usd", "0.013"),
             ("payment_stars_enabled", "true"),
             ("payment_ton_enabled", "true"),
-            ("ton_testnet_mode", "true")
+            ("ton_testnet_mode", "true"),
+            ("support_telegram_username", "")
         ]
         
         for key, value in default_settings:
@@ -442,6 +463,44 @@ class Database:
                 INSERT OR IGNORE INTO admin_settings (key, value)
                 VALUES (?, ?)
             ''', (key, value))
+        
+        conn.commit()
+        conn.close()
+    
+    def insert_default_characters(self):
+        """Insert default characters if none exist"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT COUNT(*) FROM characters")
+        if cursor.fetchone()[0] == 0:
+            default_characters = [
+                (
+                    "Friendly Assistant",
+                    "A helpful and friendly AI companion",
+                    "You are a friendly, helpful, and respectful AI assistant. You provide clear, informative responses while maintaining a warm and approachable tone."
+                ),
+                (
+                    "Professional Expert",
+                    "A knowledgeable professional consultant",
+                    "You are a professional expert with deep knowledge across various domains. You provide detailed, well-researched answers with a formal and authoritative tone."
+                ),
+                (
+                    "Creative Writer",
+                    "An imaginative storyteller and creative mind",
+                    "You are a creative writer with a vivid imagination. You craft engaging stories, provide creative solutions, and think outside the box while maintaining artistic flair."
+                ),
+                (
+                    "Casual Friend",
+                    "A laid-back conversational companion",
+                    "You are a casual, friendly companion who chats in a relaxed, conversational style. You use everyday language and emojis occasionally to keep things fun and engaging."
+                ),
+            ]
+            
+            cursor.executemany('''
+                INSERT INTO characters (name, description, instruction)
+                VALUES (?, ?, ?)
+            ''', default_characters)
         
         conn.commit()
         conn.close()
@@ -1567,6 +1626,141 @@ class Database:
         conn.close()
         
         return result is not None
+    
+    # Character Management Methods
+    def get_characters(self, active_only: bool = True) -> List[Dict]:
+        """Get all characters"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        query = "SELECT * FROM characters"
+        if active_only:
+            query += " WHERE is_active = 1"
+        query += " ORDER BY created_date ASC"
+        
+        cursor.execute(query)
+        rows = cursor.fetchall()
+        conn.close()
+        
+        if not rows:
+            return []
+        
+        columns = [desc[0] for desc in cursor.description]
+        return [dict(zip(columns, row)) for row in rows]
+    
+    def get_character(self, character_id: int) -> Optional[Dict]:
+        """Get a specific character by ID"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT * FROM characters WHERE id = ?", (character_id,))
+        row = cursor.fetchone()
+        conn.close()
+        
+        if row:
+            columns = [desc[0] for desc in cursor.description]
+            return dict(zip(columns, row))
+        return None
+    
+    def create_character(self, name: str, description: str, instruction: str, is_active: bool = True) -> int:
+        """Create a new character and return its ID"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            INSERT INTO characters (name, description, instruction, is_active)
+            VALUES (?, ?, ?, ?)
+        ''', (name, description, instruction, is_active))
+        
+        character_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
+        
+        return character_id
+    
+    def update_character(self, character_id: int, name: str = None, description: str = None, 
+                        instruction: str = None, is_active: bool = None) -> bool:
+        """Update an existing character"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        updates = []
+        params = []
+        
+        if name is not None:
+            updates.append("name = ?")
+            params.append(name)
+        if description is not None:
+            updates.append("description = ?")
+            params.append(description)
+        if instruction is not None:
+            updates.append("instruction = ?")
+            params.append(instruction)
+        if is_active is not None:
+            updates.append("is_active = ?")
+            params.append(is_active)
+        
+        if not updates:
+            conn.close()
+            return False
+        
+        updates.append("updated_date = ?")
+        params.append(datetime.now())
+        params.append(character_id)
+        
+        query = f"UPDATE characters SET {', '.join(updates)} WHERE id = ?"
+        cursor.execute(query, params)
+        
+        success = cursor.rowcount > 0
+        conn.commit()
+        conn.close()
+        
+        return success
+    
+    def delete_character(self, character_id: int) -> bool:
+        """Delete a character (or set as inactive)"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        # Check if any users are using this character
+        cursor.execute("SELECT COUNT(*) FROM users WHERE character_id = ?", (character_id,))
+        count = cursor.fetchone()[0]
+        
+        if count > 0:
+            # Don't delete, just deactivate
+            cursor.execute("UPDATE characters SET is_active = 0 WHERE id = ?", (character_id,))
+        else:
+            # Safe to delete
+            cursor.execute("DELETE FROM characters WHERE id = ?", (character_id,))
+        
+        success = cursor.rowcount > 0
+        conn.commit()
+        conn.close()
+        
+        return success
+    
+    def set_user_character(self, user_id: int, character_id: int) -> bool:
+        """Set a user's selected character"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            UPDATE users SET character_id = ? WHERE user_id = ?
+        ''', (character_id, user_id))
+        
+        success = cursor.rowcount > 0
+        conn.commit()
+        conn.close()
+        
+        return success
+    
+    def get_user_character(self, user_id: int) -> Optional[Dict]:
+        """Get the character selected by a user"""
+        user = self.get_user(user_id)
+        if not user or not user.get('character_id'):
+            return None
+        
+        return self.get_character(user['character_id'])
     
     # Activity Logging Methods
     def log_user_activity(self, user_id: int, activity_type: str, activity_data: dict):

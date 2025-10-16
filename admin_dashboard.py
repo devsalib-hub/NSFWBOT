@@ -348,6 +348,69 @@ def delete_package(package_id):
         flash('Error deleting package!')
     return redirect(url_for('packages'))
 
+@app.route('/characters')
+@login_required
+def characters():
+    """Display all characters"""
+    characters = db.get_characters(active_only=False)
+    return render_template('characters.html', characters=characters)
+
+@app.route('/characters/create', methods=['GET', 'POST'])
+@login_required
+def create_character():
+    """Create a new character"""
+    if request.method == 'POST':
+        name = request.form['name']
+        description = request.form['description']
+        instruction = request.form['instruction']
+        is_active = 'is_active' in request.form
+        
+        character_id = db.create_character(name, description, instruction, is_active)
+        
+        if character_id:
+            flash('Character created successfully!')
+            return redirect(url_for('characters'))
+        else:
+            flash('Error creating character!')
+    
+    return render_template('create_character.html')
+
+@app.route('/characters/edit/<int:character_id>', methods=['GET', 'POST'])
+@login_required
+def edit_character(character_id):
+    """Edit an existing character"""
+    if request.method == 'POST':
+        name = request.form['name']
+        description = request.form['description']
+        instruction = request.form['instruction']
+        is_active = 'is_active' in request.form
+        
+        success = db.update_character(character_id, name, description, instruction, is_active)
+        
+        if success:
+            flash('Character updated successfully!')
+            return redirect(url_for('characters'))
+        else:
+            flash('Error updating character!')
+    
+    character = db.get_character(character_id)
+    if not character:
+        flash('Character not found!')
+        return redirect(url_for('characters'))
+    
+    return render_template('edit_character.html', character=character)
+
+@app.route('/characters/delete/<int:character_id>', methods=['POST'])
+@login_required
+def delete_character(character_id):
+    """Delete or deactivate a character"""
+    success = db.delete_character(character_id)
+    if success:
+        flash('Character deleted/deactivated successfully!')
+    else:
+        flash('Error deleting character!')
+    return redirect(url_for('characters'))
+
 @app.route('/transactions')
 @login_required
 def transactions():
@@ -441,6 +504,9 @@ def settings():
         admin_password = request.form.get('admin_password', 'admin')
         log_level = request.form.get('log_level', 'INFO')
         
+        # Support settings
+        support_telegram_username = request.form.get('support_telegram_username', '')
+        
         # Update in database
         settings_to_update = {
             'bot_token': bot_token,
@@ -480,7 +546,8 @@ def settings():
             'dashboard_port': dashboard_port,
             'admin_username': admin_username,
             'admin_password': admin_password,
-            'log_level': log_level
+            'log_level': log_level,
+            'support_telegram_username': support_telegram_username
         }
         
         for key, value in settings_to_update.items():

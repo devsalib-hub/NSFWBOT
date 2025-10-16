@@ -406,15 +406,92 @@ class TelegramBot:
         user_id = query.from_user.id
         self.db.set_user_language(user_id, lang_code)
 
+        # Store context for after character selection
         start_context = context.user_data.get('start_context', {})
-        referral_bonus = start_context.get('referral_bonus')
+        context.user_data['after_character_selection'] = {
+            'first_name': query.from_user.first_name,
+            'lang_code': lang_code,
+            'referral_bonus': start_context.get('referral_bonus')
+        }
 
-        welcome_message = self._build_welcome_message(query.from_user.first_name, lang_code, referral_bonus)
-        await query.edit_message_text(welcome_message)
+        # Show character selection
+        await self.show_character_selection(query, lang_code, context)
 
-        context.user_data.pop('start_context', None)
+    async def show_character_selection(self, query, lang_code, context: ContextTypes.DEFAULT_TYPE):
+        """Show character selection with glass-style buttons"""
+        characters = self.db.get_characters(active_only=True)
+        
+        if not characters:
+            # No characters available, skip to welcome
+            after_context = context.user_data.get('after_character_selection', {})
+            welcome_message = self._build_welcome_message(
+                after_context.get('first_name', 'User'),
+                lang_code,
+                after_context.get('referral_bonus')
+            )
+            await query.edit_message_text(welcome_message)
+            context.user_data.pop('after_character_selection', None)
+            await self.show_glass_menu(query.message.chat.id, lang_code, context)
+            return
+        
+        # Build character selection message
+        message = f"{get_text('character.select_title', lang_code)}\n\n{get_text('character.select_subtitle', lang_code)}\n\n"
+        
+        # Create keyboard with character buttons (2 per row for glass effect)
+        keyboard = []
+        row = []
+        for idx, char in enumerate(characters):
+            button = InlineKeyboardButton(
+                f"🎭 {char['name']}",
+                callback_data=f"select_character_{char['id']}"
+            )
+            row.append(button)
+            
+            if len(row) == 2 or idx == len(characters) - 1:
+                keyboard.append(row)
+                row = []
+        
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.edit_message_text(message, reply_markup=reply_markup)
 
-        await self.show_glass_menu(query.message.chat.id, lang_code, context)
+    async def handle_character_selection(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle character selection callback"""
+        query = update.callback_query
+        await query.answer()
+        
+        user_id = query.from_user.id
+        user_lang = self.db.get_user_language(user_id)
+        
+        character_id = int(query.data.replace("select_character_", ""))
+        character = self.db.get_character(character_id)
+        
+        if not character:
+            await query.edit_message_text(get_text('general.error', user_lang))
+            return
+        
+        # Set user's character
+        self.db.set_user_character(user_id, character_id)
+        
+        # Build confirmation message
+        confirmation = get_text('character.selected', user_lang).format(
+            name=character['name'],
+            description=character['description']
+        )
+        
+        await query.edit_message_text(confirmation, parse_mode='Markdown')
+        
+        # Show welcome message and menu
+        after_context = context.user_data.get('after_character_selection', {})
+        if after_context:
+            welcome_message = self._build_welcome_message(
+                after_context.get('first_name', 'User'),
+                user_lang,
+                after_context.get('referral_bonus')
+            )
+            await query.message.reply_text(welcome_message)
+            context.user_data.pop('after_character_selection', None)
+        
+        await self.show_glass_menu(query.message.chat.id, user_lang, context)
 
     async def show_glass_menu(self, chat_id, user_lang, context: ContextTypes.DEFAULT_TYPE, message_text=None):
         """Helper method to show the glass-style interactive menu"""
@@ -448,12 +525,20 @@ class TelegramBot:
             )
         ])
         
-        # Row 3: Help & Language
+        # Row 3: Character & Help
         keyboard.append([
+            InlineKeyboardButton(
+                get_text('character.change_character', user_lang), 
+                callback_data="cmd_character"
+            ),
             InlineKeyboardButton(
                 get_text('commands.help', user_lang), 
                 callback_data="cmd_help"
-            ),
+            )
+        ])
+        
+        # Row 4: Language
+        keyboard.append([
             InlineKeyboardButton(
                 get_text('commands.language', user_lang), 
                 callback_data="cmd_language"
@@ -517,6 +602,7 @@ class TelegramBot:
             "cmd_packages": self.packages_command,
             "cmd_balance": self.balance_command,
             "cmd_referral": self.referral_command,
+            "cmd_character": self.character_command,
             "cmd_help": self.help_command,
             "cmd_language": self.language_command,
             "cmd_enterreferral": self.enter_referral_command,
@@ -818,6 +904,18 @@ class TelegramBot:
             
             keyboard.append(row)
         
+        # Add support button if configured
+        support_username = self.db.get_setting('support_telegram_username', '')
+        if support_username:
+            # Remove @ if user added it
+            support_username = support_username.lstrip('@')
+            keyboard.append([
+                InlineKeyboardButton(
+                    get_text('buttons.contact_support', user_lang),
+                    url=f"https://t.me/{support_username}"
+                )
+            ])
+        
         message_text = "\n".join(message_lines).strip()
         reply_markup = InlineKeyboardMarkup(keyboard)
         await update.message.reply_text(message_text, reply_markup=reply_markup, parse_mode='Markdown')
@@ -902,6 +1000,45 @@ Use /packages to buy more credits!
         """
         
         await update.message.reply_text(balance_text)
+    
+    async def character_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Show character selection or current character"""
+        user_id = update.effective_user.id
+        user_lang = get_user_language(user_id, self.db)
+        
+        # Check if command came from callback query or regular command
+        if update.callback_query:
+            query = update.callback_query
+            await query.answer()
+            await self.show_character_selection(query, user_lang, context)
+        else:
+            # Regular command
+            current_character = self.db.get_user_character(user_id)
+            
+            if current_character:
+                # Show current character info
+                char_msg = get_text('character.current_character', user_lang).format(
+                    name=current_character['name'],
+                    description=current_character['description']
+                )
+                keyboard = [[InlineKeyboardButton(
+                    get_text('character.change_character', user_lang),
+                    callback_data="cmd_character"
+                )]]
+                reply_markup = InlineKeyboardMarkup(keyboard)
+                await update.message.reply_text(char_msg, reply_markup=reply_markup, parse_mode='Markdown')
+            else:
+                # No character selected, show selection
+                await update.message.reply_text(get_text('character.select_title', user_lang))
+                # Create a fake query object to reuse the selection method
+                class FakeQuery:
+                    def __init__(self, message):
+                        self.message = message
+                    async def edit_message_text(self, text, reply_markup=None):
+                        await self.message.reply_text(text, reply_markup=reply_markup)
+                
+                fake_query = FakeQuery(update.message)
+                await self.show_character_selection(fake_query, user_lang, context)
     
     async def referral_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Show user's referral information"""
@@ -1026,6 +1163,19 @@ Use /packages to buy more credits!
             await update.message.reply_text(get_text('general.bot_offline', user_lang))
             return
         
+        # Check if user has selected a character
+        user_character = self.db.get_user_character(user_id)
+        if not user_character:
+            # User hasn't selected a character yet
+            no_char_msg = get_text('character.no_character_selected', user_lang)
+            keyboard = [[InlineKeyboardButton(
+                get_text('character.change_character', user_lang),
+                callback_data="cmd_character"
+            )]]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            await update.message.reply_text(no_char_msg, reply_markup=reply_markup, parse_mode='Markdown')
+            return
+        
         # Update user activity
         self.db.update_user_activity(user_id)
         
@@ -1033,6 +1183,8 @@ Use /packages to buy more credits!
         self.db.log_user_activity(user_id, 'ai_interaction', {
             'action': 'sent_text_message',
             'message_length': len(user_message),
+            'character_id': user_character['id'],
+            'character_name': user_character['name'],
             'has_conversation_memory': self.db.get_setting('enable_conversation_memory', 'true') == 'true'
         })
         
@@ -1055,10 +1207,11 @@ Use /packages to buy more credits!
                 history_length = int(self.db.get_setting('conversation_history_length', '10'))
                 conversation_history = self.db.get_conversation_history(user_id, limit=history_length)
             
-            # Generate AI response with context
+            # Generate AI response with context and character instruction
             ai_response = await self.ai_handler.generate_text_response(
                 user_message, 
-                conversation_history=conversation_history
+                conversation_history=conversation_history,
+                system_instruction=user_character['instruction']
             )
             
             # Get Venice API metadata for auditing
@@ -1242,6 +1395,11 @@ Use /packages to buy more credits!
             await self.handle_start_language_selection(update, context)
             return
 
+        # Handle character selection
+        if data.startswith("select_character_"):
+            await self.handle_character_selection(update, context)
+            return
+
         # Handle language selection
         if data.startswith("set_lang_"):
             await self.handle_language_callback(update, context)
@@ -1288,6 +1446,18 @@ Use /packages to buy more credits!
                     ))
                 
                 keyboard.append(row)
+            
+            # Add support button if configured
+            support_username = self.db.get_setting('support_telegram_username', '')
+            if support_username:
+                # Remove @ if user added it
+                support_username = support_username.lstrip('@')
+                keyboard.append([
+                    InlineKeyboardButton(
+                        get_text('buttons.contact_support', user_lang),
+                        url=f"https://t.me/{support_username}"
+                    )
+                ])
             
             reply_markup = InlineKeyboardMarkup(keyboard)
             await query.edit_message_text(get_text('packages.select', user_lang), reply_markup=reply_markup)

@@ -389,6 +389,17 @@
                     </select>
                     <div class="form-text">Logging verbosity level</div>
                 </div>
+                
+                <div class="mb-3">
+                    <label for="support_telegram_username" class="form-label">Support Telegram Username</label>
+                    <div class="input-group">
+                        <span class="input-group-text">@</span>
+                        <input type="text" class="form-control" id="support_telegram_username" name="support_telegram_username" 
+                               value="{{ settings.get('support_telegram_username', '') }}" 
+                               placeholder="yoursupport">
+                    </div>
+                    <div class="form-text">Telegram username for customer support (without @). Users will see a support button in packages view.</div>
+                </div>
             </div>
         </div>
     </div>

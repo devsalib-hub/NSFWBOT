@@ -46,7 +46,8 @@
         "check_payment_status": "🔍 Проверить платеж",
         "view_dashboard": "📊 Открыть панель",
         "buy_more": "🛒 Купить ещё",
-        "check_again": "🔍 Проверить снова"
+        "check_again": "🔍 Проверить снова",
+        "contact_support": "💬 Contact Support"
     },
     "credits": {
         "not_enough_text": "❌ У вас недостаточно кредитов на текстовые сообщения!\n\nИспользуйте /packages, чтобы купить больше.",
@@ -59,10 +60,10 @@
         "default_video_caption": "Пользователь отправил видео"
     },
     "welcome": {
-    "title": "🚀 Добро пожаловать в Next Void, {first_name}!",
+        "title": "🚀 Добро пожаловать в Next Void, {first_name}!",
         "referral_bonus": "🎉 **Реферальный бонус применён!**\nВы и ваш друг получили:\n📝 +{text_reward} текстовых сообщений\n🖼️ +{image_reward} генераций изображений\n🎥 +{video_reward} генераций видео\n",
-    "features": "Добро пожаловать в Next Void, где мы убеждены, что искусственный интеллект должен оставаться без цензуры и фильтров. Мы понимаем, что множество ценных приложений ИИ ограничены или заблокированы корпоративными структурами. Наша миссия — вернуть свободу доступа к ИИ и помочь вам раскрыть весь его потенциал без каких-либо барьеров.",
-    "start_prompt": "🔥 Начни с провокационного сообщения и посмотри, что создаст Next Void.",
+        "features": "Добро пожаловать в Next Void, где мы убеждены, что искусственный интеллект должен оставаться без цензуры и фильтров. Мы понимаем, что множество ценных приложений ИИ ограничены или заблокированы корпоративными структурами. Наша миссия — вернуть свободу доступа к ИИ и помочь вам раскрыть весь его потенциал без каких-либо барьеров.",
+        "start_prompt": "🔥 Начни с провокационного сообщения и посмотри, что создаст Next Void.",
         "free_messages": "🎁 Бесплатные сообщения для новых пользователей:\n📝 Текст: {free_text} сообщений\n🖼️ Изображения: {free_image} генераций\n🎥 Видео: {free_video} генераций",
         "after_free": "После использования бесплатных сообщений, вам нужно будет купить пакет для продолжения.",
         "commands_info": "Используйте /packages для просмотра доступных пакетов\nИспользуйте /dashboard для проверки использования\nИспользуйте /referral для получения реферальной ссылки\nИспользуйте /help для дополнительных команд"
@@ -187,5 +188,13 @@
         "ton_payment_pending_title": "⏳ **Платёж в ожидании**",
         "ton_payment_pending_details": "💰 Сумма: {amount} TON\n📅 Создано: {date}\n🆔 ID транзакции: {transaction}",
         "ton_payment_pending_body": "❌ Платёж ещё не найден в блокчейне.\n\n**Убедитесь, что:**\n✅ Отправили ровно {amount} TON\n✅ Использовали правильный комментарий: `Payment_{transaction}`\n✅ Отправили на правильный адрес\n\n⏰ Появление транзакции в блокчейне может занять несколько минут."
+    },
+    "character": {
+        "select_title": "🎭 Choose Your AI Character",
+        "select_subtitle": "Select a character that matches your style:",
+        "selected": "✅ You selected: **{name}**\n\n{description}\n\nYou can change your character anytime from the menu!",
+        "change_character": "🎭 Change Character",
+        "no_character_selected": "⚠️ **Please select a character first!**\n\nUse /start to choose your AI character.",
+        "current_character": "🎭 **Current Character:**\n**{name}**\n{description}"
     }
 }

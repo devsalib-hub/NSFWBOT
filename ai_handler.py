@@ -63,7 +63,7 @@ class OpenRouterAPI:
             }
             self._add_provider_headers()
     
-    async def generate_text_response(self, user_message: str, user_context: str = None, conversation_history: list = None) -> str:
+    async def generate_text_response(self, user_message: str, user_context: str = None, conversation_history: list = None, system_instruction: str = None) -> str:
         """Generate AI text response using direct HTTP connection"""
         try:
             # Refresh settings from database
@@ -79,18 +79,19 @@ class OpenRouterAPI:
             print(f"   Base URL: {self.base_url}")
             print(f"   Model: {self.model}")
             print(f"   API Key: {'*' * (len(self.api_key) - 4) + self.api_key[-4:] if len(self.api_key) > 4 else '***'}")
+            print(f"   Character Instruction: {'Yes' if system_instruction else 'No'}")
             
             # Use direct HTTP connection approach like Venice AI example
             if 'venice.ai' in self.base_url:
-                return await self._venice_direct_request(user_message, user_context, conversation_history)
+                return await self._venice_direct_request(user_message, user_context, conversation_history, system_instruction)
             else:
-                return await self._standard_openai_request(user_message, user_context, conversation_history)
+                return await self._standard_openai_request(user_message, user_context, conversation_history, system_instruction)
         
         except Exception as e:
             print(f"Error in generate_text_response: {str(e)}")
             return "Sorry, I encountered an error while generating a response. Please try again."
     
-    async def _venice_direct_request(self, user_message: str, user_context: str = None, conversation_history: list = None) -> str:
+    async def _venice_direct_request(self, user_message: str, user_context: str = None, conversation_history: list = None, system_instruction: str = None) -> str:
         """Direct HTTP request to Venice AI with rate limiting and header monitoring"""
         try:
             # Read from database settings (no more hardcoding)
@@ -102,8 +103,12 @@ class OpenRouterAPI:
                 print("❌ Venice AI API key not configured")
                 return "Sorry, the AI service is not properly configured. Please contact the administrator."
             
-            # Build messages array - NO SYSTEM PROMPT, PURE USER MESSAGES ONLY
+            # Build messages array
             messages = []
+            
+            # Add system instruction if provided (character instruction)
+            if system_instruction:
+                messages.append({"role": "system", "content": system_instruction})
             
             # Add conversation history if provided
             if conversation_history:
@@ -313,11 +318,15 @@ class OpenRouterAPI:
         # Retry the request
         return await self._venice_direct_request(user_message, user_context, conversation_history)
     
-    async def _standard_openai_request(self, user_message: str, user_context: str = None, conversation_history: list = None) -> str:
-        """Standard OpenAI-compatible request for other providers - NO SYSTEM PROMPT"""
+    async def _standard_openai_request(self, user_message: str, user_context: str = None, conversation_history: list = None, system_instruction: str = None) -> str:
+        """Standard OpenAI-compatible request for other providers"""
         try:
-            # Build messages array - NO SYSTEM PROMPT, PURE USER MESSAGES ONLY
+            # Build messages array
             messages = []
+            
+            # Add system instruction if provided (character instruction)
+            if system_instruction:
+                messages.append({"role": "system", "content": system_instruction})
             
             # Add conversation history if provided
             if conversation_history:

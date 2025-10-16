@@ -120,6 +120,9 @@
                     <a class="nav-link {% if request.endpoint == 'packages' %}active{% endif %}" href="{{ url_for('packages') }}">
                         <i class="fas fa-box"></i> Packages
                     </a>
+                    <a class="nav-link {% if request.endpoint in ['characters', 'create_character', 'edit_character'] %}active{% endif %}" href="{{ url_for('characters') }}">
+                        <i class="fas fa-users"></i> Characters
+                    </a>
                     <a class="nav-link {% if request.endpoint == 'transactions' %}active{% endif %}" href="{{ url_for('transactions') }}">
                         <i class="fas fa-receipt"></i> Transactions
                     </a>
