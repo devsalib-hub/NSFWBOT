@@ -156,12 +156,11 @@ class BotManager:
         """Start the admin dashboard"""
         print("🌐 Starting admin dashboard...")
         try:
+            dashboard_host, dashboard_port = self._resolve_dashboard_binding()
             # Import and run dashboard in a thread
             import threading
             def run_dashboard():
                 try:
-                    dashboard_host = self.db.get_setting('dashboard_host', '127.0.0.1')
-                    dashboard_port = int(self.db.get_setting('dashboard_port', '5000'))
                     dashboard_app.run(
                         host=dashboard_host,
                         port=dashboard_port,
@@ -173,9 +172,7 @@ class BotManager:
             
             dashboard_thread = threading.Thread(target=run_dashboard, daemon=True)
             dashboard_thread.start()
-            
-            dashboard_host = self.db.get_setting('dashboard_host', '127.0.0.1')
-            dashboard_port = self.db.get_setting('dashboard_port', '5000')
+
             admin_username = self.db.get_setting('admin_username', 'admin')
             admin_password = self.db.get_setting('admin_password', 'admin')
             print(f"✅ Admin dashboard started at http://{dashboard_host}:{dashboard_port}")
@@ -228,8 +225,7 @@ class BotManager:
         
         # Dashboard status
         if self.dashboard_thread and self.dashboard_thread.is_alive():
-            dashboard_host = self.db.get_setting('dashboard_host', '127.0.0.1')
-            dashboard_port = self.db.get_setting('dashboard_port', '5000')
+            dashboard_host, dashboard_port = self._resolve_dashboard_binding()
             print(f"🌐 Admin Dashboard: ✅ Running")
             print(f"   URL: http://{dashboard_host}:{dashboard_port}")
         else:
@@ -247,6 +243,19 @@ class BotManager:
         # Configuration
         simulation_mode = self.db.get_setting('simulation_mode', 'true').lower() == 'true'
         print(f"⚙️ Mode: {'🧪 Simulation' if simulation_mode else '🚀 Production'}")
+
+    def _resolve_dashboard_binding(self):
+        """
+        Resolve dashboard host/port with hosted-platform overrides.
+        Railway/Render/Heroku-like envs require binding to 0.0.0.0:$PORT.
+        """
+        hosted_port = os.getenv('PORT')
+        if hosted_port:
+            return '0.0.0.0', int(hosted_port)
+
+        dashboard_host = self.db.get_setting('dashboard_host', '127.0.0.1')
+        dashboard_port = int(self.db.get_setting('dashboard_port', '5000'))
+        return dashboard_host, dashboard_port
 
 def signal_handler(signum, frame):
     """Handle shutdown signals"""

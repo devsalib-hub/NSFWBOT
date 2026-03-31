@@ -41,7 +41,7 @@ EXPOSE 5000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:5000/api/stats || exit 1
+    CMD ["sh", "-c", "curl -f http://localhost:${PORT:-5000}/api/stats || exit 1"]
 
 # Run the application
 CMD ["python", "start_bot.py"]
