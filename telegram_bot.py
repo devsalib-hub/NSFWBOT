@@ -1966,7 +1966,8 @@ Use /packages to buy more credits!
                 poll_interval=1.0,                    # Check for updates every 1 second
                 timeout=30,                          # Timeout for each poll request
                 drop_pending_updates=True,           # Ignore old updates on restart (prevents spam)
-                allowed_updates=Update.ALL_TYPES     # Accept all update types
+                allowed_updates=Update.ALL_TYPES,    # Accept all update types
+                stop_signals=None                    # Required when bot runs outside main thread
             )
             
         except Exception as e:
