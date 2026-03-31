@@ -39,18 +39,23 @@ class BotManager:
         self.dashboard_thread = None
         self.db = Database()
 
-    def validate_environment(self):
-        """Validate that all required environment variables are set"""
-        print("🔍 Validating configuration...")
-        
+    def validate_environment(self, require_bot_token: bool = True):
+        """Validate configuration; optionally require bot token."""
+        print("Validating configuration...")
         try:
-            Config.validate_config()
-            print("✅ Configuration is valid!")
+            if require_bot_token:
+                Config.validate_config()
+            print("Configuration is valid.")
             return True
         except ValueError as e:
-            print(f"❌ Configuration error: {e}")
-            print("\n💡 Run 'python config_manager.py --setup' to configure the bot")
+            print(f"Configuration error: {e}")
+            print("Set BOT_TOKEN in environment (Railway Variables) or dashboard settings.")
             return False
+
+    def has_bot_token(self) -> bool:
+        """Return True when bot token is available from DB or environment."""
+        token = Config.get_bot_token()
+        return bool(token and token.strip())
     
     def setup_logging(self):
         """Setup logging configuration"""
@@ -197,19 +202,21 @@ class BotManager:
         print("✅ All services stopped")
     
     def start_full_stack(self):
-        """Start both bot and dashboard"""
-        if not self.validate_environment():
-            return False
-        
+        """Start dashboard always; start bot only if BOT_TOKEN exists."""
         self.setup_logging()
         
         if not self.initialize_database():
             return False
         
-        # Start services
-        self.bot_thread = self.start_telegram_bot()
+        # Start dashboard first so hosted setup is always reachable
         self.dashboard_thread = self.start_admin_dashboard()
-        
+
+        # Start bot only when token is configured
+        if self.has_bot_token():
+            self.bot_thread = self.start_telegram_bot()
+        else:
+            print("BOT_TOKEN not configured. Dashboard is running; set token in dashboard/env then restart.")
+
         return True
     
     def status(self):
