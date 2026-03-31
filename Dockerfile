@@ -33,9 +33,6 @@ RUN useradd --create-home --shell /bin/bash --uid 1000 app && \
 # Switch to non-root user
 USER app
 
-# Create volume mount points
-VOLUME ["/app/data", "/app/logs"]
-
 # Expose port
 EXPOSE 5000
 
