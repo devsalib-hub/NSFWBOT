@@ -1960,7 +1960,7 @@ Use /packages to buy more credits!
                 read_timeout=30.0,            # Read timeout
                 write_timeout=30.0,           # Write timeout
                 connect_timeout=30.0,         # Connection timeout
-                pool_timeout=30.0و             # Pool timeout
+                pool_timeout=30.0,             # Pool timeout
                 proxy_url=proxy_url,      # اضافه کردن پروکسی به در خواست
                 get_updates_proxy_url=proxy_url # اضافه کردن پروکسی برای دریافت آپدیت‌ها
             )
