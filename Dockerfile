@@ -25,15 +25,20 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy application code
 COPY . .
 
-# Create non-root user for security
+# --- بخش اصلاح شده برای پایداری در Railway ---
+# ایجاد یوزر و پوشه‌ها
 RUN useradd --create-home --shell /bin/bash --uid 1000 app && \
-    mkdir -p /app/data /app/logs && \
-    chown -R app:app /app
+    mkdir -p /app/data /app/logs
+
+# تنظیم دسترسی بسیار آزاد برای پوشه دیتابیس 
+# این خط باعث می‌شود حتی اگر Volume روت باشد، یوزر app بتواند در آن بنویسد
+RUN chown -R app:app /app && \
+    chmod -R 777 /app/data /app/logs
 
 # Switch to non-root user
 USER app
 
-# Expose port
+# Expose port (ریل‌وی معمولا از این استفاده می‌کند)
 EXPOSE 5000
 
 # Health check
@@ -41,4 +46,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD ["sh", "-c", "curl -f http://localhost:${PORT:-5000}/api/stats || exit 1"]
 
 # Run the application
-CMD ["python", "start_bot.py"]
+CMD ["python", "start_bot.py", "start"]
